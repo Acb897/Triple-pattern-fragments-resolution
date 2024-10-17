@@ -1,0 +1,1268 @@
+{
+  "title": "DBpedia 2015-04 | DBpedia – Linked Data Fragments",
+  "headers": {
+    "h1": [
+      "DBpedia – Linked Data Fragments"
+    ],
+    "h2": [
+      "DBpedia 2015-04"
+    ],
+    "h3": [
+      "Matches in DBpedia 2015-04 for { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/Architect>  }",
+      "About DBpedia 2015-04"
+    ],
+    "h4": [
+
+    ],
+    "h5": [
+
+    ],
+    "h6": [
+
+    ]
+  },
+  "span": [
+    "",
+    "",
+    "2,355",
+    "100"
+  ],
+  "links": [
+    {
+      "text": "DBpedia – Linked Data Fragments",
+      "href": "https://fragments.dbpedia.org/"
+    },
+    {
+      "text": "",
+      "href": "http://dbpedia.org/"
+    },
+    {
+      "text": "DBpedia 2015-04",
+      "href": "https://fragments.dbpedia.org/2015/en#dataset"
+    },
+    {
+      "text": "next",
+      "href": "https://fragments.dbpedia.org/2015/en?subject=&predicate=rdf%3Atype&object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect&page=2"
+    },
+    {
+      "text": "%C3%81lvaro_Siza_Vieira",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C3%2581lvaro_Siza_Vieira"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "%C3%89douard_Deperthes",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C3%2589douard_Deperthes"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "%C3%89mile_Nouguier",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C3%2589mile_Nouguier"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "%C3%89tienne_Gaboury",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C3%2589tienne_Gaboury"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "%C3%89tienne_Sulpice_Hallet",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C3%2589tienne_Sulpice_Hallet"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "%C3%89tienne_Tricaud",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C3%2589tienne_Tricaud"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "%C4%90or%C4%91e_Alfirevi%C4%87",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2F%25C4%2590or%25C4%2591e_Alfirevi%25C4%2587"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A.F._Norris",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA.F._Norris"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A.J._Gibson",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA.J._Gibson"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A.T._Simmons",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA.T._Simmons"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A._F._Livesay",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA._F._Livesay"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A._J._Humbert",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA._J._Humbert"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A._Quincy_Jones",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA._Quincy_Jones"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "A._W._Tillinghast",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FA._W._Tillinghast"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Aarno_Ruusuvuori",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAarno_Ruusuvuori"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Abdel-Wahed_El-Wakil",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAbdel-Wahed_El-Wakil"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Abdur_Rahman_Hye",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAbdur_Rahman_Hye"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Abraham_M._Radcliffe",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAbraham_M._Radcliffe"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Abram_Garfield",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAbram_Garfield"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adam_Menelaws",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdam_Menelaws"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adam_Tihany",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdam_Tihany"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adamo_Boari",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdamo_Boari"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adams_&_Prentice",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdams_%26_Prentice"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adams_&_Woodbridge",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdams_%26_Woodbridge"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Addison_Hutton",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAddison_Hutton"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Addison_Kimball",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAddison_Kimball"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Addison_Mizner",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAddison_Mizner"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Aditya_Prakash_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAditya_Prakash_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adler_&_Sullivan",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdler_%26_Sullivan"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolf_Cluss",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolf_Cluss"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolf_Krischanitz",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolf_Krischanitz"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolf_Loos",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolf_Loos"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolf_W._Edelsv%C3%A4rd",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolf_W._Edelsv%25C3%25A4rd"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolph_Cudell",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolph_Cudell"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolph_Scherrer",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolph_Scherrer"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adolph_Strauch",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdolph_Strauch"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adrian_Gilbert_Scott",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdrian_Gilbert_Scott"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adrian_Pearsall",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdrian_Pearsall"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Adrian_Smith_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAdrian_Smith_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Aelric",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAelric"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Afanasy_Grigoriev",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAfanasy_Grigoriev"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Afanasy_Seredin-Sabatin",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAfanasy_Seredin-Sabatin"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Affonso_Eduardo_Reidy",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAffonso_Eduardo_Reidy"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Agust%C3%ADn_Goovaerts",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAgust%25C3%25ADn_Goovaerts"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Agust%C3%ADn_de_Betancourt",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAgust%25C3%25ADn_de_Betancourt"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Al_Beadle",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAl_Beadle"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alan_Barnes_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlan_Barnes_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alan_Ford_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlan_Ford_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alan_Goldberg_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlan_Goldberg_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alan_Hantman",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlan_Hantman"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alan_McCullough_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlan_McCullough_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alastair_Lansley",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlastair_Lansley"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_B._Groves",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_B._Groves"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_C._Martin,_Jr.",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_C._Martin%2C_Jr."
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_C._Martin,_Sr.",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_C._Martin%2C_Sr."
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_C._Schweinfurth",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_C._Schweinfurth"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Cameron",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Cameron"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Ely_Ives",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Ely_Ives"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Frey_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Frey_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Gamaliel_Jones",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Gamaliel_Jones"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Held",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Held"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Jensen",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Jensen"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Lothian",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Lothian"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Lybrock",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Lybrock"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Purchas",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Purchas"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Randolph_Ross",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Randolph_Ross"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Richardson",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Richardson"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Albert_Schippel",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlbert_Schippel"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alberto_Alfonso",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlberto_Alfonso"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alberto_Campo_Baeza",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlberto_Campo_Baeza"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alberto_Kalach",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlberto_Kalach"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Aldo_Rossi",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAldo_Rossi"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alejandra_Lillo",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlejandra_Lillo"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alejandro_Zaera-Polo",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlejandro_Zaera-Polo"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Aleksandar_Deroko",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAleksandar_Deroko"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Aleksey_Gornostayev",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAleksey_Gornostayev"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alessandro_Ripellino",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlessandro_Ripellino"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alex_B._Mahood",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlex_B._Mahood"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alex_Cooper",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlex_Cooper"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alex_Gordon_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlex_Gordon_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alex_Michaelis",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlex_Michaelis"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alex_Popov_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlex_Popov_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Bernardazzi",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Bernardazzi"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Blair",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Blair"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Brodsky",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Brodsky"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Buchanan_Campbell",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Buchanan_Campbell"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_C._Eschweiler",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_C._Eschweiler"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Delos_%22Boss%22_Jones",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Delos_%2522Boss%2522_Jones"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Francis_Dunlop",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Francis_Dunlop"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_George_Robertson_Mackenzie",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_George_Robertson_Mackenzie"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Jackson_Davis",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Jackson_Davis"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Kaminsky",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Kaminsky"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_McGill_(architect)",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_McGill_(architect)"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Parris",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Parris"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Pomerantsev",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Pomerantsev"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Tamanian",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Tamanian"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Thomson",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Thomson"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Vesnin",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Vesnin"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Wittek",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Wittek"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "Alexander_Zelenko",
+      "href": "?subject=http%3A%2F%2Fdbpedia.org%2Fresource%2FAlexander_Zelenko"
+    },
+    {
+      "text": "type",
+      "href": "?predicate=http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type"
+    },
+    {
+      "text": "Architect",
+      "href": "?object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect"
+    },
+    {
+      "text": "next",
+      "href": "https://fragments.dbpedia.org/2015/en?subject=&predicate=rdf%3Atype&object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect&page=2"
+    },
+    {
+      "text": "DBpedia 2015-04",
+      "href": "http://dbpedia.org/"
+    },
+    {
+      "text": "Creative Commons Attribution-ShareAlike 3.0",
+      "href": "https://creativecommons.org/licenses/by-sa/3.0/"
+    },
+    {
+      "text": "Linked Data Fragments Server",
+      "href": "https://github.com/LinkedDataFragments/Server.js"
+    }
+  ],
+  "paragraphs": [
+    "\n    \n  ",
+    "\n      Powered by a Linked Data Fragments Server\n      ©2013–2024 Ghent University – imec\n    "
+  ]
+}
