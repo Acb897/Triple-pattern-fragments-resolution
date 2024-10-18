@@ -5,7 +5,7 @@ require 'json'
 
 # Control class to handle the URL construction for Triple Pattern Fragment (TPF) queries.
 class Control
-  def initialize(base_url)
+  def initialize(base_url, triple_pattern)
     @base_url = base_url
   end
 
