@@ -14,4 +14,5 @@ Transform.rb contains the transform class, that parses SPARQL queries and return
 BasicGraphPatternIterator example.rb contains the proof of concept for the algorithm that will decide the order in which the triple patterns will be sent to the TPF server.
 
 TODO: Change the query parser to fix it not recognizing OPTIONAL statements
-TODO: Make the algorithm prioritization of the Triple patterns a recursive iterator that does it all automatically
+ONGOING: Make the algorithm prioritization of the Triple patterns a recursive iterator that does it all automatically
+    TODO: Right now, the transform function returns TPFs for a given query, and the variables from each TPF (see example). Make the FindBGPPriority function in BasicGraphPatternIterator example.rb take those variables, create a mappings hash with key = variable value (e.g. ?city), and values = each the corresponding values after the request to the TPF server (e.g. http://dbpedia.org/resource/Amsterdam, http://dbpedia.org/resource/Athens etc). Note that there could be multiple variables in a single TPF. Then, the findbgppriority function will find the TPF that shares a variable with the minimal one [THIS IS ALREADY DONE], iterate over the mappings, instantiate all possible variables, and resolve. This would happen iteratively.

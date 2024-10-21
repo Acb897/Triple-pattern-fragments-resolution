@@ -40,7 +40,7 @@ def parse_html_to_json(url)
     @list_of_solutions = Array.new
     
     doc.css('a').each { |line| 
-      line = line.to_s    
+      line = line.to_s
       if line.include? "hydra:next"
         @nextpage = line.match(/href="(.*)" rel/)[1]
         puts "Next page: #{@nextpage}"
@@ -59,8 +59,7 @@ def parse_html_to_json(url)
         @list_of_solutions << @solution_mapping
       end
       }
-      puts @nextpage
-      print @list_of_solutions
+      # print @list_of_solutions
   rescue OpenURI::HTTPError => e
     puts "Failed to retrieve the URL: #{e.message}"
   rescue StandardError => e
@@ -68,9 +67,12 @@ def parse_html_to_json(url)
   end
 end
 
-# URL to parse (you can replace this with any valid URL)
-url = 'https://fragments.dbpedia.org/2015/en?subject=&predicate=rdf%3Atype&object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect'
+# # # URL to parse (you can replace this with any valid URL)
 
-# Call the function to parse the HTML and convert it to JSON
-parse_html_to_json(url)
+# # url = 'https://fragments.dbpedia.org/2015/en?subject=&predicate=rdf%3Atype&object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect'
+# url = "http://fairdata.systems:5000/?subject=&predicate=rdf%3Atype&object="
+
+
+# # # Call the function to parse the HTML and convert it to JSON
+# parse_html_to_json(url)
 

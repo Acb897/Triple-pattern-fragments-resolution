@@ -1,6 +1,6 @@
-def transform
+def transform (sparql)
   begin
-    parsed = SPARQL.parse(@sparql)  # this is a nightmare method, that returns a wide variety of things! LOL!
+    parsed = SPARQL.parse(sparql)  # this is a nightmare method, that returns a wide variety of things! LOL!
   rescue => e
     $stderr.puts e.to_s
     return false
@@ -41,9 +41,19 @@ def transform
   @bgp = Array.new
   patterns.each do |pattern|
     pat = Hash.new
-    pat[:subject] = pattern.subject.to_s
-    pat[:predicate] = pattern.predicate.to_s
-    pat[:object] = pattern.object.to_s
+    subject = pattern.subject.to_s
+    predicate = pattern.predicate.to_s
+    object = pattern.object.to_s
+    pat[:subject] = subject
+    pat[:predicate] = predicate
+    pat[:object] = object
+    # Adds which parts of the triple are the variables (i.e. subject, predicate, or object)
+    variables = pattern.variables.to_h.values.to_sparql
+    spovariables = Array.new
+    spovariables.append "subject" if variables.include? subject
+    spovariables.append "predicate" if variables.include? predicate
+    spovariables.append "object" if variables.include? object
+    pat[:variables] = spovariables
     @bgp.append pat
   end
 end
