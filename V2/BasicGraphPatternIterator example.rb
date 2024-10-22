@@ -40,34 +40,49 @@ def FindBGPPriority (query, control)
   puts puts puts
 
   min_pattern_url = tpf_uri_request_builder(control, min_pattern[:subject], min_pattern[:predicate], min_pattern[:object])
+
+  # Harvests the triples for the min triple pattern, and stores the bound variables in an array of hashes that follow this structure: {variable (e.g. ?city) => bound variable (e.g. http://dbpedia.org/resource/Amsterdam)}
   parse_html_to_json(min_pattern_url)
-  mappings = Array.new
+  
+  mappings_array = Array.new
+
   @list_of_solutions.each do |solution|
-    puts solution
-    puts puts
+    min_pattern[:variables].each do |variable|
+      mappings = Hash.new
+      variable_value = variable.keys.join("")
+      mappings[variable_value.to_sym] = solution[variable_value]
+      mappings_array.append mappings
+    end
+  end
+  
+# puts mappings_array
+
+  # To optimize the algorithm, it will check for other triple patterns that share a variable with the first TP that was used. If there is more than one TP that shares a variable, it will choose the one with fewer answers.
+  matching = Array.new
+  min_pattern_vars = Array.new
+
+  min_pattern[:variables].each do |hash|
+    min_pattern_vars.append hash.values.join("")
+  end
+puts min_pattern_vars
+  count_hash.each do |tp, count|
+    tp[:variables].each do |hash|
+      if min_pattern_vars.include? hash.values.join("")
+        matching.append ({tp => count})
+      end
+    end
 
   end
 
-
-  # # To optimize the algorithm, it will check for other triple patterns that share a variable with the first TP that was used. If there is more than one TP that shares a variable, it will choose the one with fewer answers.
-  # matching = Array.new
-  # count_hash.each do |tp, count|
-  #   tp.each do |key, value| 
-  #     if value.start_with? "?"
-  #       if min_pattern.value?(value)
-  #         matching.append ({tp => count})
-  #       end
-  #     end
-  #   end
-  # end
-
-  # if matching.length > 1
-  #   min_pattern = matching.min_by { |pattern, count| count }.first
-  # else matching.length == 1
-  #   min_pattern = matching[0]
-  # end
-
-  # puts min_pattern
+  # puts matching
+  if matching.length > 1
+    min_pattern = matching.min_by { |pattern, count| count }.first
+  else matching.length == 1
+    min_pattern = matching[0]
+  end
+  min_pattern = min_pattern.keys.join("")
+  puts "Min pattern"
+  puts min_pattern
 end
 
 def tpf_uri_request_builder (controlURI, subject, predicate, object)

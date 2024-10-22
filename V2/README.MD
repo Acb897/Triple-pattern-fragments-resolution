@@ -14,5 +14,14 @@ Transform.rb contains the transform class, that parses SPARQL queries and return
 BasicGraphPatternIterator example.rb contains the proof of concept for the algorithm that will decide the order in which the triple patterns will be sent to the TPF server.
 
 TODO: Change the query parser to fix it not recognizing OPTIONAL statements
+
 ONGOING: Make the algorithm prioritization of the Triple patterns a recursive iterator that does it all automatically
-    TODO: Right now, the transform function returns TPFs for a given query, and the variables from each TPF (see example). Make the FindBGPPriority function in BasicGraphPatternIterator example.rb take those variables, create a mappings hash with key = variable value (e.g. ?city), and values = each the corresponding values after the request to the TPF server (e.g. http://dbpedia.org/resource/Amsterdam, http://dbpedia.org/resource/Athens etc). Note that there could be multiple variables in a single TPF. Then, the findbgppriority function will find the TPF that shares a variable with the minimal one [THIS IS ALREADY DONE], iterate over the mappings, instantiate all possible variables, and resolve. This would happen iteratively.
+    TODO: Store the harvested triples from each TPF request into a .ttl file. 
+    TODO: Right now, it gets the triple pattern with the least solutions, harvests the triples, uses the solutions to create a list of instantiated variables, chooses the triple pattern fragment that shares a variable with the minimal pattern. I need to make it so that it calls the request uri creator function with the instantiated variables, stores the solutions, and does the selection of the next tpf. RESUMEN: tengo que hacer la llamada al server TPF, recopilar los datos en un archivo, y hacer que la seleccion del siguiente tpf y su resolucion sean automaticas (reescribir lo que tengo en basicgraphpatterniterator example.rb para que sea una funcion que recorre todo el Basic graph pattern, prioriza las triple patterns, las ejectuta, y usa los resultados con las siguientes tp hasta que se acabe el bgp.)
+
+
+    Fix ln 54-57 Transform.rb (make it a loop)
+    #FIX this
+    spovariables.append variable_hash[:subject] = subject if variables.include? subject
+    spovariables.append variable_hash[:predicate] = predicate if variables.include? predicate
+    spovariables.append variable_hash[:object] = object if variables.include? object

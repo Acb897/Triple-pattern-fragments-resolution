@@ -40,6 +40,7 @@ def transform (sparql)
   patterns = rdf_query.patterns  # returns the triple patterns in the query
   @bgp = Array.new
   patterns.each do |pattern|
+
     pat = Hash.new
     subject = pattern.subject.to_s
     predicate = pattern.predicate.to_s
@@ -47,12 +48,27 @@ def transform (sparql)
     pat[:subject] = subject
     pat[:predicate] = predicate
     pat[:object] = object
+    # print pat
+    # puts
     # Adds which parts of the triple are the variables (i.e. subject, predicate, or object)
-    variables = pattern.variables.to_h.values.to_sparql
+    variables = pattern.variables.to_h.values.to_sparql.split(" ")
     spovariables = Array.new
-    spovariables.append "subject" if variables.include? subject
-    spovariables.append "predicate" if variables.include? predicate
-    spovariables.append "object" if variables.include? object
+    
+    # puts variables
+    # puts puts
+    #FIX this
+    variables.each do |var|
+      pat.each do |k,v|
+        variable_hash = Hash.new
+        if var == v
+          variable_hash[k] = v 
+          spovariables.append variable_hash
+        end
+      end 
+    end  
+    # spovariables.append variable_hash["subject"] = subject if variables.include? subject
+    # spovariables.append variable_hash["predicate"] = predicate if variables.include? predicate
+    # spovariables.append variable_hash["object"] = object if variables.include? object
     pat[:variables] = spovariables
     @bgp.append pat
   end
