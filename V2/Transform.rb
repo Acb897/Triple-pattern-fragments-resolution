@@ -38,7 +38,7 @@ def transform (sparql)
   qs += " WHERE { \n"
   
   patterns = rdf_query.patterns  # returns the triple patterns in the query
-  @bgp = Array.new
+  bgp = Array.new
   patterns.each do |pattern|
 
     pat = Hash.new
@@ -70,8 +70,9 @@ def transform (sparql)
     # spovariables.append variable_hash["predicate"] = predicate if variables.include? predicate
     # spovariables.append variable_hash["object"] = object if variables.include? object
     pat[:variables] = spovariables
-    @bgp.append pat
+    bgp.append pat
   end
+  return bgp
 end
 
 

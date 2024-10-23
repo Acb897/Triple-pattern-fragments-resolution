@@ -15,7 +15,7 @@ BasicGraphPatternIterator example.rb contains the proof of concept for the algor
 
 TODO: Change the query parser to fix it not recognizing OPTIONAL statements
 
-ONGOING: Make the algorithm prioritization of the Triple patterns a recursive iterator that does it all automatically
+ONGOING:
     TODO: Store the harvested triples from each TPF request into a .ttl file. 
     TODO: Right now, it gets the triple pattern with the least solutions, harvests the triples, uses the solutions to create a list of instantiated variables, chooses the triple pattern fragment that shares a variable with the minimal pattern. I need to make it so that it calls the request uri creator function with the instantiated variables, stores the solutions, and does the selection of the next tpf. RESUMEN: tengo que hacer la llamada al server TPF, recopilar los datos en un archivo, y hacer que la seleccion del siguiente tpf y su resolucion sean automaticas (reescribir lo que tengo en basicgraphpatterniterator example.rb para que sea una funcion que recorre todo el Basic graph pattern, prioriza las triple patterns, las ejectuta, y usa los resultados con las siguientes tp hasta que se acabe el bgp.)
 
@@ -25,3 +25,15 @@ ONGOING: Make the algorithm prioritization of the Triple patterns a recursive it
     spovariables.append variable_hash[:subject] = subject if variables.include? subject
     spovariables.append variable_hash[:predicate] = predicate if variables.include? predicate
     spovariables.append variable_hash[:object] = object if variables.include? object
+
+    Make the output be turtle
+
+    DBpedia's tpf server has a weird issue, where it marks as hydra:next an incorrect URI by replacing "&" with &amp; before the predicate, subject and object. See example below:
+    INCORRECT URI: https://fragments.dbpedia.org/2016-04/en?subject=&amp;predicate=rdf%3Atype&amp;object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect&amp;page=2
+    CORRECT URI: https://fragments.dbpedia.org/2015/en?subject=&predicate=rdf%3Atype&object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect&page=2
+
+    remove matched
+
+
+
+Cambiar para que en vez de hacer 90.000 requests al server TPF haga un request por TPF, saque los triples que harvestea, y luego con el script comparar para quedarme solo con los que coincidan. 
