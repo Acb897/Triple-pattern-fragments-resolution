@@ -36,4 +36,4 @@ ONGOING:
 
 
 
-Cambiar para que en vez de hacer 90.000 requests al server TPF haga un request por TPF, saque los triples que harvestea, y luego con el script comparar para quedarme solo con los que coincidan. 
+Cambiar para que en vez de hacer 90.000 requests al server TPF haga un request por TPF, saque los triples que harvestea, y luego con el script comparar para quedarme solo con los que coincidan. Ojo con cuando uno de los triple patterns no se puede resolver.
