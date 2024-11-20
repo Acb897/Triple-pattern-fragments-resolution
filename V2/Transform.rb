@@ -11,11 +11,16 @@ def transform (sparql)
   vars = ''
   prefixes = Array.new
   rdf_query= ''
+  optional_patterns = Array.new
   
   if parsed.is_a?(RDF::Query)  # we need to get the RDF:Query object out of the list of things returned from the parse
     rdf_query = parsed
   else
     parsed.each do |c|
+      # if c.is_a?(SPARQL::Algebra::Operator::LeftJoin)
+      #   puts c.operands[1].patterns
+      # end
+      optional_patterns.append c if c.is_a? (SPARQL::Algebra::Operator::LeftJoin)
       rdf_query = c if c.is_a?(RDF::Query)
       select = true if c.is_a? SPARQL::Algebra::Operator::Project
       distinct = true if c.is_a? SPARQL::Algebra::Operator::Project
@@ -38,9 +43,16 @@ def transform (sparql)
   qs += " WHERE { \n"
   
   patterns = rdf_query.patterns  # returns the triple patterns in the query
+
+  optional_patterns.each do |optionals_list|
+    optionals_list.each do |optional_pattern|
+      next unless optional_pattern.is_a? (RDF::Query)
+      patterns.append optional_pattern.patterns[0]
+    end
+  end
+  
   bgp = Array.new
   patterns.each do |pattern|
-
     pat = Hash.new
     subject = pattern.subject.to_s
     predicate = pattern.predicate.to_s
@@ -70,7 +82,7 @@ def transform (sparql)
     # spovariables.append variable_hash["predicate"] = predicate if variables.include? predicate
     # spovariables.append variable_hash["object"] = object if variables.include? object
     pat[:variables] = spovariables
-    bgp.append pat
+    bgp.append pat unless bgp.include? pat
   end
   return bgp
 end
