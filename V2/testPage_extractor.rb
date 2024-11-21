@@ -3,7 +3,7 @@ require 'nokogiri'
 
 
 # Function to parse HTML from a given URL and convert to JSON
-def parse_tpf_response(url, output_file_name, writing_mode)
+def parse_tpf_response(url)
   begin
     puts "URL: #{url}"
     @complete_list_of_solutions ||= []  # Initialize if not already done
@@ -53,19 +53,20 @@ def parse_tpf_response(url, output_file_name, writing_mode)
     end
 
     # Append the solutions from the current page to the complete list
-    @complete_list_of_solutions.concat(@list_of_solutions_to_write)
+    # @complete_list_of_solutions.concat(@list_of_solutions_to_write)
 
-    # Open a file to append the contents
-    File.open(output_file_name, writing_mode) do |file|
-      @list_of_solutions_to_write.each do |solution|
-        file.puts solution
-      end
-    end
-    puts "Successfully written to file"
+    # # Open a file to append the contents
+    # File.open(output_file_name, writing_mode) do |file|
+    #   @list_of_solutions_to_write.each do |solution|
+    #     file.puts solution
+    #   end
+    # end
+    # puts "Successfully written to file"
     # puts @complete_list_of_solutions
+    print @list_of_solutions_to_write
 
     # If there is a next page, recursively call the function
-    parse_tpf_response(@nextpage, output_file_name, "a") unless @nextpage.nil?
+    parse_tpf_response(@nextpage) unless @nextpage.nil?
 
   rescue OpenURI::HTTPError => e
     puts "Failed to retrieve the URL: #{e.message}"

@@ -12,26 +12,40 @@ def FindBGPPriority (query, control)
   @control = control
   # Extracts the BGP from the query
   bgp = transform(query)
-  # puts bgp
-  @count_hash = Hash.new
-  # Iterates over the triple patterns inside of the Basic Graph Pattern to create TPF server request URIs that match them.
+  # # puts bgp
+  # @count_hash = Hash.new
+  # # Iterates over the triple patterns inside of the Basic Graph Pattern to create TPF server request URIs that match them.
+  # bgp.each do |triple_pattern|
+  #   # puts triple_pattern
+  #   tpf_url = tpf_uri_request_builder(@control, triple_pattern[:subject], triple_pattern[:predicate], triple_pattern[:object])
+  #   # puts tpf_url
+  #   # Fetch the page from the TPF server and return the HTML content
+  #   html_content = URI.open(tpf_url).read
+  #   doc = Nokogiri::HTML(html_content)    
+  #   # Find the count in the HTML content
+  #   total_items_span = doc.at_css('span[property="void:triples hydra:totalItems"]')
+  #   # Extract the value of the "content" attribute and convert it to an integer
+  #   count = total_items_span['content'].to_i if total_items_span
+  #   # puts count
+  #   #Create a hash of the triple pattern and its count of answers
+  #   @count_hash[triple_pattern] = count
+  # end
+  # mappings = nil
+  # bgp_iterator(@count_hash, mappings)
   bgp.each do |triple_pattern|
     # puts triple_pattern
-    tpf_url = tpf_uri_request_builder(@control, triple_pattern[:subject], triple_pattern[:predicate], triple_pattern[:object])
-    # puts tpf_url
-    # Fetch the page from the TPF server and return the HTML content
-    html_content = URI.open(tpf_url).read
-    doc = Nokogiri::HTML(html_content)    
-    # Find the count in the HTML content
-    total_items_span = doc.at_css('span[property="void:triples hydra:totalItems"]')
-    # Extract the value of the "content" attribute and convert it to an integer
-    count = total_items_span['content'].to_i if total_items_span
-    # puts count
-    #Create a hash of the triple pattern and its count of answers
-    @count_hash[triple_pattern] = count
+    subject = triple_pattern[:subject]
+    predicate = triple_pattern[:predicate]
+    object = triple_pattern[:object]
+    current_pattern_url = tpf_uri_request_builder(@control, subject, predicate, object)
+    puts current_pattern_url
+    parse_tpf_response(current_pattern_url)
+
+    # min_pattern_url = tpf_uri_request_builder(@control, subject, predicate, object) 
+    #           puts "Ojo, min pattern url nuevo" 
+    #           puts min_pattern_url
+    #           parse_tpf_response(min_pattern_url, "Harvested triples.txt", "a")
   end
-  mappings = nil
-  bgp_iterator(@count_hash, mappings)
 
  
   
@@ -148,28 +162,33 @@ def bgp_iterator(bgp, mapping = nil)
   # Fetch and parse the TPF page as HTML
   min_pattern, bgp, matched_vars = find_next_TP(bgp, mapping)
   @previous_min_pattern = min_pattern
-  
-  puts "-------- Harvesting"
   puts "Min pattern: #{min_pattern}"
-  puts "Mapping: #{mapping}"
+  puts "BGP: #{bgp}"
+  # puts "-------- Harvesting"
+  # puts "Min pattern: #{min_pattern}"
+  # puts "Mapping: #{mapping}"
   harvest_tpf(min_pattern, mapping, matched_vars)
-  # puts @complete_list_of_solutions
 
-  mappings_array = Array.new
-  # puts "ESTA ES LA SIGUIENTE PATTERN: #{min_pattern}"
-  # puts "Clase de la pattern: #{min_pattern[:subject]}"   #Ojo, aqui esta poniendo la case de variables como Nil, asi que tengo que comprobar como devuelve min_pattern el find_next_tp
+
+  puts @complete_list_of_solutions
   puts puts
-  @complete_list_of_solutions.each do |solution|
-    min_pattern[:variables].each do |variable|
-      mappings = Hash.new
-      variable_value = variable.keys.join("")
-      # puts "Variable value: #{variable.values}"
-      # puts "Solution: #{solution}"
-      mappings[variable.values.join("")] = solution[variable_value]
-      mappings_array.append mappings
-    end
-  end
-  puts "MAPPING: #{mappings_array}"
+
+  # mappings_array = Array.new
+  # # puts "ESTA ES LA SIGUIENTE PATTERN: #{min_pattern}"
+  # # puts "Clase de la pattern: #{min_pattern[:subject]}"   #Ojo, aqui esta poniendo la case de variables como Nil, asi que tengo que comprobar como devuelve min_pattern el find_next_tp
+  # puts puts
+  # @complete_list_of_solutions.each do |solution|
+  #   min_pattern[:variables].each do |variable|
+  #     mappings = Hash.new
+  #     variable_value = variable.keys.join("")
+  #     # puts "Variable value: #{variable.values}"
+  #     # puts "Solution: #{solution}"
+  #     mappings[variable.values.join("")] = solution[variable_value]
+  #     mappings_array.append mappings
+  #   end
+  # end
+  # puts "MAPPING: #{mappings_array}"
+  mappings_array = nil
   bgp_iterator(bgp, mappings_array) unless bgp.empty?
 end
 
