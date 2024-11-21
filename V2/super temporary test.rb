@@ -2,7 +2,7 @@ require 'open-uri'
 require 'nokogiri'
 require_relative "./Query_builder.rb"
 # require_relative "./GraphDBInteraction.rb"
-
+require 'cgi'
 
 # Function to parse HTML from a given URL and convert to JSON
 def parse_tpf_response(url)
@@ -46,11 +46,22 @@ def parse_tpf_response(url)
         @solution_mapping["predicate"] = answpredicate[1] if answpredicate
 
       elsif line.include? 'href="?object'
+        # puts line
         answobject = line.match(/href="\?object=(.*?)" resource="/)
+        # puts answobject[1]
         answobject = CGI.unescape(answobject[1])
-        @solution_mapping["object"] = answobject[1] if answobject
+
+        
+        if answobject 
+            print answobject
+            puts answobject.include? "\\"
+            puts CGI.unescape(answobject).inspect
+            @solution_mapping["object"] = answobject
+        end
 
         # Add the solution to the list after 'object' is found
+        puts @solution_mapping
+        puts puts puts
         @list_of_solutions_to_write << @solution_mapping
       end
     end
@@ -68,28 +79,15 @@ def parse_tpf_response(url)
     # puts @complete_list_of_solutions
     # print @list_of_solutions_to_write
     # print @list_of_solutions_to_write
-    # puts puts
-    puts @named_graph_iri
-    query = build_query(@list_of_solutions_to_write, @named_graph_iri)
-    puts query
-    insert_query(query)
-
-    
-    # If there is a next page, recursively call the function
-    parse_tpf_response(@nextpage) unless @nextpage.nil?
-
-  rescue OpenURI::HTTPError => e
-    puts "Failed to retrieve the URL: #{e.message}"
-  rescue StandardError => e
-    puts "An error occurred: #{e.message}"
-  end
+    # puts put
+end
 end
 
 # # URL to parse
-# url = 'https://fragments.dbpedia.org/2015/en?subject=&predicate=rdf%3Atype&object=http%3A%2F%2Fdbpedia.org%2Fontology%2FArchitect'
+url = 'https://fragments.dbpedia.org/2015/en?subject=%3Fperson&predicate=http%3A%2F%2Fdbpedia.org%2Fproperty%2FbirthPlace&object=%3Fcity'
 
 # # Call the function to parse the HTML and convert it to JSON
-# parse_tpf_response(url, "Harvested_triples.txt", "w")
+parse_tpf_response(url)
 
 # # Output the complete list of solutions
 # puts @complete_list_of_solutions

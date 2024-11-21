@@ -3,7 +3,7 @@
 # require_relative 'RootIterator.rb'
 require_relative "testPage_extractor.rb"
 require_relative "./Transform.rb"
-require "SPARQL"
+require "sparql"
 require 'net/http'
 require 'open-uri'
 require 'nokogiri'
@@ -40,7 +40,6 @@ def FindBGPPriority (query, control)
     current_pattern_url = tpf_uri_request_builder(@control, subject, predicate, object)
     puts current_pattern_url
     parse_tpf_response(current_pattern_url)
-
     # min_pattern_url = tpf_uri_request_builder(@control, subject, predicate, object) 
     #           puts "Ojo, min pattern url nuevo" 
     #           puts min_pattern_url
@@ -204,6 +203,7 @@ SELECT ?person ?city WHERE  {
 ?city dc:subject dbpedia:Capitals_in_Europe. 
 }"
 
+@named_graph_iri = "http://example.org/graphs/my-new-graph"
 # Control URI
 control = 'https://fragments.dbpedia.org/2015/en'
 FindBGPPriority(query, control)
