@@ -48,8 +48,9 @@ def parse_tpf_response(url)
       elsif line.include? 'href="?object'
         answobject = line.match(/href="\?object=(.*?)" resource="/)
         answobject = CGI.unescape(answobject[1])
-        @solution_mapping["object"] = answobject[1] if answobject
+        @solution_mapping["object"] = answobject.gsub('"', "'") if answobject
 
+        
         # Add the solution to the list after 'object' is found
         @list_of_solutions_to_write << @solution_mapping
       end

@@ -50,14 +50,7 @@ def parse_tpf_response(url)
         answobject = line.match(/href="\?object=(.*?)" resource="/)
         # puts answobject[1]
         answobject = CGI.unescape(answobject[1])
-
-        
-        if answobject 
-            print answobject
-            puts answobject.include? "\\"
-            puts CGI.unescape(answobject).inspect
-            @solution_mapping["object"] = answobject
-        end
+        @solution_mapping["object"] = answobject.gsub('"', "'") if answobject
 
         # Add the solution to the list after 'object' is found
         puts @solution_mapping
