@@ -17,15 +17,20 @@ require_relative "functions.rb"
 
 query = "
 PREFIX dbpedia: <http://dbpedia.org/resource/Category:> 
+PREFIX dbpedia-owl: <http://dbpedia.org/ontology/> 
 SELECT ?person WHERE  {
   ?person a dbpedia-owl:Architect . 
 }"
 
 
-
+@named_graph_iri = "http://example.org/graphs/my-new-graph1"
 # Define the control URI
 control = 'https://fragments.dbpedia.org/2015/en'
 
 # Execute the function to process the query
 FindBGPPriority(query, control)
-execute_sparql_query(query)
+
+
+results = execute_sparql_query(query)
+
+puts results
