@@ -187,7 +187,7 @@ Proyecto TED2021-130788B-I00 financed by
 <br />
 MCIN/AEI /10.13039/501100011033 and by the European Union Next Generation EU/ PRTR.
 <br />
-<img width="300" src="./VP/images/ted-logo.png" />
+<img width="300" src="./images/ted-logo.png" />
 <br />
 <br />
 <br />
