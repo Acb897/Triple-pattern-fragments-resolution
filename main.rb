@@ -1,7 +1,4 @@
-require_relative "functions.rb"
-
-
-
+require_relative "documented_functions.rb"
 
 # Define a SPARQL query to be used in the example
 # query = "

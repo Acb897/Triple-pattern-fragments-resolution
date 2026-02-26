@@ -4,6 +4,8 @@ require 'open-uri'
 require 'nokogiri'
 require "sparql"
 require 'net/http'
+require 'rdf'
+require 'rdf/rdfa'
 
 # Transforms a SPARQL query into a structure containing the triple patterns in the form of subject, predicate and object.
 # The query is parsed and extracted into a set of subject-predicate-object triple pattern fragments.
@@ -113,50 +115,63 @@ end
 # @param url [String] The URL to the TPF service.
 def parse_tpf_response(url)
   begin
-    puts "URL: #{url}"
-    @complete_list_of_solutions ||= []  
-    @nextpage = nil
+    puts "Fetching TPF page: #{url}"
 
+    # 1. Load the document (can also use RestClient if you prefer)
     html_content = URI.open(url).read
     doc = Nokogiri::HTML(html_content)
 
-    total_items_span = doc.at_css('span[property="void:triples hydra:totalItems"]')
-    total_items_content = total_items_span['content'].to_i if total_items_span
+    # 2. Parse RDFa — this is the important change
+    graph = RDF::Graph.new
+    reader = RDF::RDFa::Reader.new(doc, base_uri: url)
 
-    @list_of_solutions_to_write = []
-
-    doc.css('a').each do |line| 
-      line = line.to_s
-      if line.include? "hydra:next"
-        @nextpage = line.match(/href="(.*)" rel="next"/)[1]
-        @nextpage = @nextpage.gsub("&amp;", "&")
-      elsif line.include? 'href="?subject'
-        @solution_mapping = {}
-        answsubject = line.match(/href="\?subject.*title="(.*)">/)
-        @solution_mapping["subject"] = answsubject[1] if answsubject
-      elsif line.include? 'href="?predicate'
-        answpredicate = line.match(/href="\?predicate.*title="(.*)">/)
-        @solution_mapping["predicate"] = answpredicate[1] if answpredicate
-      elsif line.include? 'href="?object'
-        answobject = line.match(/href="\?object=(.*?)" resource="/)
-        answobject = CGI.unescape(answobject[1])
-        @solution_mapping["object"] = answobject.gsub('"', "'") if answobject
-
-        @list_of_solutions_to_write << @solution_mapping
-      end
+    reader.each_statement do |statement|
+      graph << statement
     end
 
-    puts @named_graph_iri
-    query = build_query(@list_of_solutions_to_write, @named_graph_iri)
-    puts query
-    insert_query(query)
+    # Optional: also show how many triples were found
+    puts "Extracted #{graph.count} triples from RDFa"
 
-    parse_tpf_response(@nextpage) unless @nextpage.nil?
+    # 3. Convert to your expected array-of-hashes format
+    triples_to_insert = []
+    graph.each_statement do |stmt|
+      triple = {
+        "subject"   => stmt.subject.to_s,
+        "predicate" => stmt.predicate.to_s,
+        "object"    => stmt.object.to_s   # will be URI or literal string
+      }
+      triples_to_insert << triple
+    end
+
+    # Handle next page (still using your current logic — could also be improved)
+    next_link = doc.at_css('link[rel="next"]')&.[](:href) ||
+                doc.at_css('a[rel="next"]')&.[](:href)
+
+    if next_link
+      @nextpage = URI.join(url, next_link).to_s
+      @nextpage.gsub!("&amp;", "&") if @nextpage
+    else
+      @nextpage = nil
+    end
+
+    # 4. Insert what we found
+    unless triples_to_insert.empty?
+      query = build_query(triples_to_insert, @named_graph_iri)
+      puts "Inserting batch of #{triples_to_insert.size} triples"
+      # puts query   # uncomment for debugging
+      insert_query(query)
+    end
+
+    # 5. Recurse to next page
+    parse_tpf_response(@nextpage) if @nextpage
 
   rescue OpenURI::HTTPError => e
-    puts "Failed to retrieve the URL: #{e.message}"
+    puts "HTTP error fetching #{url}: #{e.message}"
+  rescue RDF::FormatError, RDF::ReaderError => e
+    puts "RDFa parsing failed for #{url}: #{e.message.inspect}"
   rescue StandardError => e
-    puts "An error occurred: #{e.message}"
+    puts "Unexpected error in parse_tpf_response(#{url}): #{e.message}"
+    puts e.backtrace.first(8)
   end
 end
 
@@ -254,7 +269,7 @@ end
 # @param query [String] The SPARQL query to be executed.
 # @return [Array] The results of the query.
 def execute_sparql_query(query)
-  endpoint_url = 'http://osboxes:7200/repositories/test1'
+  endpoint_url = 'http://acb8computer:7200/repositories/test1'
   headers = {
     'Content-Type' => 'application/x-www-form-urlencoded',
     'Accept' => 'application/sparql-results+json'
