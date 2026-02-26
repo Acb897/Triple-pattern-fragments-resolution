@@ -22,10 +22,10 @@ SELECT ?person WHERE  {
 
 @named_graph_iri = "http://example.org/graphs/my-new-graph1"
 # Define the control URI
-control = 'https://fragments.dbpedia.org/2015/en'
+tpf_server = 'https://fragments.dbpedia.org/2015/en'
 
 # Execute the function to process the query
-FindBGPPriority(query, control)
+FindBGPPriority(query, tpf_server)
 
 
 results = execute_sparql_query(query)

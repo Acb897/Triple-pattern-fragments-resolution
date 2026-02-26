@@ -6,6 +6,24 @@ require "sparql"
 require 'net/http'
 require 'rdf'
 require 'rdf/rdfa'
+require 'set'
+
+
+
+
+# Recursively extracts EVERY triple pattern from any SPARQL algebra tree
+# (handles BGP, OPTIONAL/LeftJoin, UNION, sub-queries, GRAPH, etc.)
+def extract_all_patterns(operator, patterns = [])
+  case operator
+  when RDF::Query, SPARQL::Algebra::Operator::BGP
+    patterns.concat(operator.patterns) if operator.respond_to?(:patterns)
+  when SPARQL::Algebra::Operator
+    operator.operands.each { |op| extract_all_patterns(op, patterns) } if operator.respond_to?(:operands)
+  when Array
+    operator.each { |op| extract_all_patterns(op, patterns) }
+  end
+  patterns
+end 
 
 # Transforms a SPARQL query into a structure containing the triple patterns in the form of subject, predicate and object.
 # The query is parsed and extracted into a set of subject-predicate-object triple pattern fragments.
@@ -15,82 +33,43 @@ def transform(sparql)
   begin
     parsed = SPARQL.parse(sparql)
   rescue => e
-    $stderr.puts e.to_s
+    $stderr.puts "SPARQL parse error: #{e.message}"
     return false
   end
-  
-  select = false
-  distinct = false
-  vars = ''
-  prefixes = Array.new
-  rdf_query = ''
-  optional_patterns = Array.new
-  
-  # Process the parsed query.
-  if parsed.is_a?(RDF::Query)
-    rdf_query = parsed
-  else
-    parsed.each do |c|
-      optional_patterns.append c if c.is_a? (SPARQL::Algebra::Operator::LeftJoin)
-      rdf_query = c if c.is_a?(RDF::Query)
-      select = true if c.is_a? SPARQL::Algebra::Operator::Project
-      distinct = true if c.is_a? SPARQL::Algebra::Operator::Project
-      vars += " #{c.to_s}" if c.is_a? RDF::Query::Variable
-      next if c.is_a? Array and c.first.is_a? RDF::Query::Variable
-      prefixes << c if (c.is_a? Array and !(c.first.is_a? Array))
-    end
-  end
-  
-  # Construct the SPARQL query with prefixes, select, and distinct clauses.
-  qs = ""
-  prefixes.each {|e| qs += "PREFIX #{e[0].to_s} <#{e[1].to_s}>\n"}
-  qs += "SELECT " if select
-  qs += "DISTINCT " if distinct
-  qs += vars
-  qs += " WHERE { \n"
-  
-  patterns = rdf_query.patterns
 
-  optional_patterns.each do |optionals_list|
-    optionals_list.each do |optional_pattern|
-      next unless optional_pattern.is_a? (RDF::Query)
-      patterns.append optional_pattern.patterns[0]
-    end
+  raw_patterns = extract_all_patterns(parsed)
+
+  bgp = []
+  seen = Set.new
+  raw_patterns.each do |pat|
+    s = pat.subject.to_s
+    p = pat.predicate.to_s
+    o = pat.object.to_s
+    key = [s, p, o]
+    next if seen.include?(key)
+    seen << key
+
+    bgp << { subject: s, predicate: p, object: o }
   end
-  
-  # Process the RDF patterns to create the final BGP (Basic Graph Pattern).
-  bgp = Array.new
-  patterns.each do |pattern|
-    pat = Hash.new
-    subject = pattern.subject.to_s
-    predicate = pattern.predicate.to_s
-    object = pattern.object.to_s
-    pat[:subject] = subject
-    pat[:predicate] = predicate
-    pat[:object] = object
-    bgp.append pat unless bgp.include? pat
-  end
-  return bgp
+
+  bgp
 end
 
 # Builds a SPARQL INSERT DATA query to insert RDF triples.
 # @param triples [Array<Hash>] An array of triples to be inserted.
 # @param named_graph [String, nil] The URI of the named graph (optional).
 # @return [String] A formatted SPARQL query to insert the triples.
-def build_query(triples, named_graph = nil)
-  graph_clause = named_graph ? "GRAPH <#{named_graph}> {" : ""
-  triples_clause = triples.map do |triple|
-    subject = "<#{triple["subject"]}>"
-    predicate = "<#{triple["predicate"]}>"
-    object = triple["object"].start_with?("http://") ? "<#{triple["object"]}>" : "\"#{triple["object"]}\""
-    "    #{subject} #{predicate} #{object} ."
+def build_query(statements, named_graph = nil)
+  graph_open  = named_graph ? "GRAPH <#{named_graph}> {\n" : ""
+  graph_close = named_graph ? "\n}" : ""
+
+  triples_clause = statements.map do |stmt|
+    "#{stmt.subject.to_ntriples} #{stmt.predicate.to_ntriples} #{stmt.object.to_ntriples} ."
   end.join("\n")
 
   <<~SPARQL
     INSERT DATA {
-      #{graph_clause}
-      #{triples_clause}
-      #{graph_clause.empty? ? '' : '}'}
+      #{graph_open}#{triples_clause}#{graph_close}
     }
   SPARQL
 end
@@ -182,12 +161,15 @@ end
 # @param object [String] The object for the triple pattern (optional).
 # @param mapping [Hash, nil] Optional mapping to modify the parameters.
 # @return [String] A URL to query the TPF service.
-def tpf_uri_request_builder(controlURI, subject, predicate, object, mapping = nil)
-  urisubject = subject ? URI.encode_www_form_component(subject) : ''
-  uripredicate = predicate ? URI.encode_www_form_component(predicate) : ''
-  uriobject = object ? URI.encode_www_form_component(object) : ''
-  tpf_query_url = "#{controlURI}?subject=#{urisubject}&predicate=#{uripredicate}&object=#{uriobject}"
-  return tpf_query_url
+def tpf_uri_request_builder(controlURI, subject, predicate, object)
+  params = {}
+  # Only add the parameter if the position is BOUND (not a variable)
+  params[:subject]   = URI.encode_www_form_component(subject)   unless subject.to_s.start_with?('?') || subject.to_s.empty?
+  params[:predicate] = URI.encode_www_form_component(predicate) unless predicate.to_s.start_with?('?') || predicate.to_s.empty?
+  params[:object]    = URI.encode_www_form_component(object)    unless object.to_s.start_with?('?') || object.to_s.empty?
+
+  query_string = params.map { |k, v| "#{k}=#{v}" }.join('&')
+  "#{controlURI}?#{query_string}"
 end
 
 # Determines the next Triple Pattern to request based on the least populated pattern in the query.
@@ -293,17 +275,25 @@ end
 # Main method to initiate the process of analyzing and harvesting triple patterns from a SPARQL query.
 # @param query [String] The SPARQL query to be executed.
 # @param control [String] The control URI for the TPF service.
-def FindBGPPriority(query, control)
+def FindBGPPriority(query, control, named_graph_iri = nil)
   @control = control
-  # Extracts the BGP from the query
-  bgp = transform(query)
+  @named_graph_iri = named_graph_iri
 
-  bgp.each do |triple_pattern|
-    subject = triple_pattern[:subject]
-    predicate = triple_pattern[:predicate]
-    object = triple_pattern[:object]
-    current_pattern_url = tpf_uri_request_builder(@control, subject, predicate, object)
-    puts current_pattern_url
-    parse_tpf_response(current_pattern_url)
+  bgp = transform(query)
+  if bgp == false || bgp.empty?
+    puts "No triple patterns found in query (or parse error)."
+    return
   end
+
+  puts "Query contains #{bgp.size} unique triple pattern(s). Starting harvest..."
+
+  bgp.each do |pat|
+    url = tpf_uri_request_builder(@control, pat[:subject], pat[:predicate], pat[:object])
+    puts "  Pattern: #{pat}"
+    puts "  URL: #{url}"
+    parse_tpf_response(url)
+  end
+
+  puts "\n✅ Harvesting finished for the query."
+  puts "   You can now run the original SPARQL query against http://localhost:7200/repositories/test1"
 end
