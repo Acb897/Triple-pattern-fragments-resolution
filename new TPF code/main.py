@@ -2,7 +2,7 @@
 # Import functions
 # ==============================
 
-from TPF import FindBGPPriority, execute_sparql_query
+from TPF import FindBGPPriority, execute_sparql_query, fetch_tpf_page
 
 
 # ==============================
@@ -24,9 +24,9 @@ from TPF import FindBGPPriority, execute_sparql_query
 
 query = """
 SELECT ?enzyme ?reaction ?equation WHERE {
-   ?enzyme <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://bio2rdf.org/ns/kegg#Enzyme> .
    ?reaction <http://bio2rdf.org/ns/kegg#xEnzyme> ?enzyme .
    ?reaction <http://bio2rdf.org/ns/kegg#equation> ?equation . 
+   ?enzyme <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://bio2rdf.org/ns/kegg#Enzyme> .
 }
 """
 
@@ -84,3 +84,8 @@ results = execute_sparql_query(query)
 
 print("\nResults:")
 print(results)
+
+# # Test call in main.py or separately
+# test_url = "http://localhost:3000/kegg-sparql?subject=http%3A%2F%2Fbio2rdf.org%2Fcpd%3AC00006"
+# g = fetch_tpf_page(test_url)
+# print("Test parse result:", len(g))

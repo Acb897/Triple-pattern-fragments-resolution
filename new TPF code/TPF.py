@@ -10,7 +10,7 @@
 #
 # Behaviour intentionally matches the Ruby version:
 # - Harvest patterns independently per endpoint
-# - Do NOT require endpoints to answer the whole query
+# - Does NOT require endpoints to answer the whole query
 # - Store harvested triples locally
 
 import re
@@ -21,10 +21,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from bs4 import BeautifulSoup
 
-from rdflib import Graph, URIRef, Literal, Variable
+from rdflib import ConjunctiveGraph, Graph, URIRef, Literal, Variable
 from rdflib.namespace import Namespace
 from rdflib.plugins.sparql import prepareQuery
-
+from rdflib.plugins.sparql.parserutils import Expr
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.algebra import translateQuery
 
@@ -45,57 +45,58 @@ page_cache = {}
 # -------------------------------------------------------------------------
 
 def extract_all_patterns(node, patterns=None):
-
     if patterns is None:
         patterns = []
 
-    if hasattr(node, "triples"):
+    if node is None:
+        return patterns
+
+    # If node has .triples attribute (BGP)
+    if hasattr(node, "triples") and node.triples:
         patterns.extend(node.triples)
 
-    for attr in ["p", "p1", "p2"]:
+    # Recurse over common attributes
+    for attr in ["p", "p1", "p2", "args", "graph"]:
         if hasattr(node, attr):
-            extract_all_patterns(getattr(node, attr), patterns)
-
-    if hasattr(node, "args"):
-        for arg in node.args:
-            extract_all_patterns(arg, patterns)
+            child = getattr(node, attr)
+            if isinstance(child, list):
+                for c in child:
+                    extract_all_patterns(c, patterns)
+            else:
+                extract_all_patterns(child, patterns)
 
     return patterns
 
-
 def transform(query):
-
     try:
         parsed = parseQuery(query)
         algebra = translateQuery(parsed)
+        if not hasattr(algebra, "algebra") or algebra.algebra is None:
+            print("WARNING: translateQuery returned empty algebra")
+            return []
+        triples = extract_all_patterns(algebra.algebra)
     except Exception as e:
         print("SPARQL parse error:", e)
-        return False
+        return []
 
-    triples = extract_all_patterns(algebra.algebra)
+    def term_to_str(term):
+        if isinstance(term, Variable):
+            return f"?{term}"   # <-- preserve the ? prefix
+        return str(term)
 
+    # Deduplicate
     seen = set()
     bgp = []
-
-    for s,p,o in triples:
-
-        s = str(s)
-        p = str(p)
-        o = str(o)
-
-        key = (s,p,o)
-
-        if key in seen:
-            continue
-
-        seen.add(key)
-
-        bgp.append({
-            "subject": s,
-            "predicate": p,
-            "object": o
-        })
-
+    for s, p, o in triples:
+        key = (term_to_str(s), term_to_str(p), term_to_str(o))
+        if key not in seen:
+            seen.add(key)
+            bgp.append({
+                "subject":   term_to_str(s),
+                "predicate": term_to_str(p),
+                "object":    term_to_str(o),
+            })
+    print("DEBUG: extracted triple patterns:", bgp)
     return bgp
 
 # -------------------------------------------------------------------------
@@ -133,22 +134,31 @@ def shares_variable(pat, processed_patterns):
 # TPF URL BUILDER
 # -------------------------------------------------------------------------
 
-def tpf_uri_request_builder(control_uri, subject, predicate, object):
+from urllib.parse import urlencode
 
+def tpf_uri_request_builder(control_uri, subject, predicate, object_):
+    """
+    Build a TPF request URL.
+    - Encodes URIs properly
+    - Skips variables (starting with ?)
+    - Returns full URL ready for fetch_tpf_page
+    """
     params = {}
 
-    if not subject.startswith("?"):
+    if subject is not None and not subject.startswith("?"):
         params["subject"] = subject
 
-    if not predicate.startswith("?"):
+    if predicate is not None and not predicate.startswith("?"):
         params["predicate"] = predicate
 
-    if not object.startswith("?"):
-        params["object"] = object
+    if object_ is not None and not object_.startswith("?"):
+        params["object"] = object_
 
-    query = urlencode(params)
-
-    return f"{control_uri}?{query}" if query else control_uri
+    if params:
+        query = urlencode(params)  # no safe= argument: # becomes %23
+        return f"{control_uri}?{query}"
+    else:
+        return control_uri
 
 
 # -------------------------------------------------------------------------
@@ -217,56 +227,104 @@ def get_pattern_count(control_uri, subject, predicate, object):
 # PAGE FETCHING (WITH CACHE)
 # -------------------------------------------------------------------------
 
-def fetch_tpf_page(url):
+from rdflib import Graph, ConjunctiveGraph
+import requests
 
+page_cache = {}
+
+def fetch_tpf_page(url):
+    """
+    Universal TPF page fetcher:
+    - Tries multiple RDF formats (TriG, Turtle, N-Triples, RDF/XML, RDFa, JSON-LD)
+    - Handles named graphs automatically
+    - Flattens all triples into a single rdflib.Graph
+    """
     if url in page_cache:
         return page_cache[url]
 
-    html = requests.get(url).text
+    headers = {
+        "Accept": "text/turtle;q=1.0, application/trig;q=0.9, application/rdf+xml;q=0.8, text/n3;q=0.7, application/ld+json;q=0.6",
+        "User-Agent": "TPF-Harvester/1.0 (Python; universal parser)",
+    }
 
-    g = Graph()
-    g.parse(data=html, format="rdfa")
+    cg = ConjunctiveGraph()
 
-    page_cache[url] = g
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        text = resp.text
+        print(f"[FETCH] URL: {url} → Status: {resp.status_code}, length={len(text)}")
 
-    return g
+        # Try parsing using multiple formats
+        formats = ["trig", "turtle", "nt", "xml", "rdfa", "json-ld"]
+        parsed = False
+
+        for fmt in formats:
+            try:
+                cg.parse(data=text, format=fmt)
+                parsed = True
+                print(f"  → Parsed {len(cg)} triples (including named graphs) using format: {fmt}")
+                break
+            except Exception:
+                continue
+
+        if not parsed:
+            print("  → WARNING: Failed to parse RDF from this page")
+            page_cache[url] = Graph()
+            return page_cache[url]
+
+        # Flatten all quads into a single Graph
+        flattened = Graph()
+        for s, p, o, ctx in cg.quads((None, None, None, None)):
+            flattened.add((s, p, o))
+
+        page_cache[url] = flattened
+        print(f"  → Flattened triples: {len(flattened)}")
+        return flattened
+
+    except Exception as e:
+        print(f"  → Fetch/parse error: {e}")
+        page_cache[url] = Graph()
+        return page_cache[url]
+
 
 
 def harvest_pattern_into_repo(url, repo):
-
+    print("Harvesting URL:", url)
     current_url = url
     page_count = 0
-
     while current_url:
-
         page_count += 1
-        print("Page", page_count, current_url)
-
+        print(f"  Page {page_count}: {current_url}")
         try:
-
             html = requests.get(current_url).text
+            print(f"    Content length: {len(html)} bytes")
+            print(f"    Starts with: {html[:80]!r}")
 
             soup = BeautifulSoup(html, "html.parser")
-
             next_link = soup.select_one('link[rel="next"], a[rel="next"]')
-
             next_url = None
-
             if next_link and next_link.get("href"):
                 next_url = urljoin(current_url, next_link["href"])
+                print("    Next page:", next_url)
 
+            # ─── Critical part ─────────────────────────────────────
             g = fetch_tpf_page(current_url)
+            print("    Parsed triples:", len(g))
 
+            if len(g) == 0:
+                print("    WARNING: empty graph after RDFa parse!")
+
+            added = 0
             for triple in g:
                 repo.add(triple)
-
-            print(" →", len(repo), "triples in repo")
+                added += 1
+            print(f"    Added {added} new triples → total now {len(repo)}")
+            # ───────────────────────────────────────────────────────
 
             current_url = next_url
-
         except Exception as e:
-
-            print("Error:", e)
+            print("    Harvest error:", e)
             current_url = None
 
 
@@ -275,25 +333,44 @@ def harvest_pattern_into_repo(url, repo):
 # -------------------------------------------------------------------------
 
 def fetch_binding(binding, pat, control_uri, repo):
+    """
+    Fetch triples for a single binding using proper concretization.
+    Only constructs a TPF URL when at least one position is bound to a concrete value.
+    """
+    def concretize(term, binding):
+        if not term.startswith("?"):
+            return term  # already concrete (URI, literal, etc.)
+        
+        var_name = term[1:]
+        if var_name not in binding:
+            return term  # unbound variable → keep as-is (will be skipped in URL builder)
+        
+        val = binding[var_name]
+        if isinstance(val, URIRef):
+            return str(val)           # proper URI string for TPF parameter
+        elif isinstance(val, Literal):
+            # For safety: most TPF servers don't support literal subjects/objects well
+            # You may want to skip or log instead of sending literals
+            print(f"WARNING: Literal bound to variable ?{var_name}: {val.n3()} — skipping TPF fetch")
+            return None
+        else:
+            return str(val)           # fallback (bnode, etc.)
 
-    s = pat["subject"]
-    p = pat["predicate"]
-    o = pat["object"]
+    s = concretize(pat["subject"], binding)
+    p = concretize(pat["predicate"], binding)
+    o = concretize(pat["object"], binding)
 
-    if s.startswith("?") and s[1:] in binding:
-        s = str(binding[s[1:]])
+    # If any concretization returned None (e.g. literal we don't support), skip
+    if None in (s, p, o):
+        return
 
-    if p.startswith("?") and p[1:] in binding:
-        p = str(binding[p[1:]])
-
-    if o.startswith("?") and o[1:] in binding:
-        o = str(binding[o[1:]])
-
-    if all(x.startswith("?") for x in [s,p,o]):
+    # Only fetch if at least one position is concrete (otherwise it's too broad)
+    if all(x.startswith("?") or x is None for x in (s, p, o)):
+        print("DEBUG: Skipping full unbound pattern fetch in bind-join")
         return
 
     url = tpf_uri_request_builder(control_uri, s, p, o)
-
+    print(f"Bind-join fetching: {url}")
     harvest_pattern_into_repo(url, repo)
 
 
@@ -426,11 +503,9 @@ INSERT DATA {{
 
 
 def insert_query(query):
-
     endpoint = "http://acb8computer:7200/repositories/test1/statements"
 
     try:
-
         r = requests.post(
             endpoint,
             data=query,
@@ -440,10 +515,10 @@ def insert_query(query):
             }
         )
 
-        if r.status_code == 200:
+        if r.status_code == 200 or r.status_code == 204:
             print("Bulk insert successful")
         else:
-            print("Insert failed", r.text)
+            print("Insert failed:", r.status_code, r.text)  # <- show server response
 
     except Exception as e:
         print("Insert error:", e)
@@ -537,6 +612,13 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
         print("Inserting", len(unique), "triples")
 
         query = build_query(unique, named_graph)
+        xEnzyme = URIRef("http://bio2rdf.org/ns/kegg#xEnzyme")
+        equation_pred = URIRef("http://bio2rdf.org/ns/kegg#equation")
+        reactions_with_enzyme = set(s for s,p,o in local_repo if p == xEnzyme)
+        reactions_with_equation = set(s for s,p,o in local_repo if p == equation_pred)
+        print(f"Reactions with xEnzyme triples: {len(reactions_with_enzyme)}")
+        print(f"Reactions with equation triples: {len(reactions_with_equation)}")
+        print(f"Reactions with BOTH (= your result count): {len(reactions_with_enzyme & reactions_with_equation)}")
 
         insert_query(query)
 
@@ -554,9 +636,14 @@ def FindBGPPriority(query, endpoints, base_named_graph=None):
     if isinstance(endpoints,str):
         endpoints = [endpoints]
 
-    bgp = transform(query)
+    try:
+        bgp = transform(query)
+    except Exception as e:
+        print("ERROR inside transform:", e)
+        return
 
     if not bgp:
+        print("No triple patterns extracted from query")
         return
 
     print("Query has", len(bgp), "triple patterns")
