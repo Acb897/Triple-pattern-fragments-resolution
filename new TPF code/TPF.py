@@ -155,8 +155,10 @@ def tpf_uri_request_builder(control_uri, subject, predicate, object_):
         params["object"] = object_
 
     if params:
-        query = urlencode(params)  # no safe= argument: # becomes %23
-        return f"{control_uri}?{query}"
+        query = urlencode(params)
+        url = f"{control_uri}?{query}"
+        print("TPF URL:", url)
+        return url
     else:
         return control_uri
 
@@ -254,6 +256,8 @@ def fetch_tpf_page(url):
         resp.raise_for_status()
         text = resp.text
         print(f"[FETCH] URL: {url} → Status: {resp.status_code}, length={len(text)}")
+        print("RESPONSE:")
+        print(text)
 
         # Try parsing using multiple formats
         formats = ["trig", "turtle", "nt", "xml", "rdfa", "json-ld"]
@@ -263,7 +267,7 @@ def fetch_tpf_page(url):
             try:
                 cg.parse(data=text, format=fmt)
                 parsed = True
-                print(f"  → Parsed {len(cg)} triples (including named graphs) using format: {fmt}")
+                # print(f"  → Parsed {len(cg)} triples (including named graphs) using format: {fmt}")
                 break
             except Exception:
                 continue
@@ -279,7 +283,7 @@ def fetch_tpf_page(url):
             flattened.add((s, p, o))
 
         page_cache[url] = flattened
-        print(f"  → Flattened triples: {len(flattened)}")
+        # print(f"  → Flattened triples: {len(flattened)}")
         return flattened
 
     except Exception as e:
@@ -298,25 +302,27 @@ def harvest_pattern_into_repo(url, repo):
         print(f"  Page {page_count}: {current_url}")
         try:
             html = requests.get(current_url).text
-            print(f"    Content length: {len(html)} bytes")
-            print(f"    Starts with: {html[:80]!r}")
+            # print(f"    Content length: {len(html)} bytes")
+            # print(f"    Starts with: {html[:80]!r}")
 
             soup = BeautifulSoup(html, "html.parser")
             next_link = soup.select_one('link[rel="next"], a[rel="next"]')
             next_url = None
             if next_link and next_link.get("href"):
                 next_url = urljoin(current_url, next_link["href"])
-                print("    Next page:", next_url)
+                # print("    Next page:", next_url)
 
             # ─── Critical part ─────────────────────────────────────
             g = fetch_tpf_page(current_url)
-            print("    Parsed triples:", len(g))
+            # print("    Parsed triples:", len(g))
 
             if len(g) == 0:
                 print("    WARNING: empty graph after RDFa parse!")
 
             added = 0
             for triple in g:
+                print("Adding triples:")
+                print(triple)
                 repo.add(triple)
                 added += 1
             print(f"    Added {added} new triples → total now {len(repo)}")
@@ -349,10 +355,7 @@ def fetch_binding(binding, pat, control_uri, repo):
         if isinstance(val, URIRef):
             return str(val)           # proper URI string for TPF parameter
         elif isinstance(val, Literal):
-            # For safety: most TPF servers don't support literal subjects/objects well
-            # You may want to skip or log instead of sending literals
-            print(f"WARNING: Literal bound to variable ?{var_name}: {val.n3()} — skipping TPF fetch")
-            return None
+            return val.n3()
         else:
             return str(val)           # fallback (bnode, etc.)
 
@@ -365,13 +368,24 @@ def fetch_binding(binding, pat, control_uri, repo):
         return
 
     # Only fetch if at least one position is concrete (otherwise it's too broad)
-    if all(x.startswith("?") or x is None for x in (s, p, o)):
-        print("DEBUG: Skipping full unbound pattern fetch in bind-join")
+    if all(x.startswith("?") for x in (s, p, o)):
+        # fallback to full pattern harvest
+        url = tpf_uri_request_builder(control_uri, s, p, o)
+        harvest_pattern_into_repo(url, repo)
         return
 
     url = tpf_uri_request_builder(control_uri, s, p, o)
+
+    before = len(repo)
+
     print(f"Bind-join fetching: {url}")
+
     harvest_pattern_into_repo(url, repo)
+
+    after = len(repo)
+
+    if after == before:
+        print("⚠️  Bind produced NO triples:", url)
 
 
 def fetch_binding_batch(batch, pat, control_uri, repo):
@@ -393,85 +407,188 @@ def fetch_binding_batch(batch, pat, control_uri, repo):
 # BINDING EXTRACTION
 # -------------------------------------------------------------------------
 
+# def extract_upstream_bindings(repo, current_idx, harvested, bgp):
+
+#     if not harvested:
+#         return []
+
+#     prev_patterns = [bgp[i] for i in harvested]
+
+#     needed = extract_vars_from_pattern(bgp[current_idx])
+
+#     upstream_vars = set()
+
+#     for p in prev_patterns:
+#         upstream_vars.update(extract_vars_from_pattern(p))
+
+#     join_vars = list(set(needed).intersection(upstream_vars))
+
+#     if not join_vars:
+#         return []
+
+#     query = "SELECT " + " ".join("?" + v for v in join_vars) + " WHERE {\n"
+
+#     def safe(term):
+
+#         if term.startswith("?"):
+#             return term
+
+#         if term.startswith("<"):
+#             return term
+
+#         if term.startswith('"'):
+#             return term
+
+#         if term.startswith("http"):
+#             return f"<{term}>"
+
+#         return f'"{term}"'
+
+#     for pat in prev_patterns:
+
+#         s = safe(pat["subject"])
+#         p = safe(pat["predicate"])
+#         o = safe(pat["object"])
+
+#         query += f" {s} {p} {o} .\n"
+
+#     query += "}"
+
+#     print("DEBUG binding extraction")
+#     print(query)
+
+#     try:
+
+#         q = prepareQuery(query)
+
+#         solutions = []
+
+#         for row in repo.query(q):
+
+#             sol = {}
+
+#             for v in join_vars:
+
+#                 val = row[v]
+
+#                 if val:
+#                     sol[v] = val
+
+#             if sol:
+#                 solutions.append(sol)
+
+#         print("DEBUG:", len(solutions), "bindings")
+
+#         return solutions
+
+#     except Exception as e:
+
+#         print("Local binding extraction failed", e)
+#         return []
+
+def term_matches(pattern_term, triple_term):
+    """
+    Check whether a triple term matches a pattern term.
+    Variables always match.
+    Constants must be equal.
+    """
+    if pattern_term.startswith("?"):
+        return True
+
+    if pattern_term.startswith("<") and pattern_term.endswith(">"):
+        pattern_term = pattern_term[1:-1]
+
+    return str(triple_term) == pattern_term
+
+def triple_matches_pattern(triple, pat):
+    s, p, o = triple
+
+    if not term_matches(pat["subject"], s):
+        return False
+
+    if not term_matches(pat["predicate"], p):
+        return False
+
+    if not term_matches(pat["object"], o):
+        return False
+
+    return True
+
 def extract_upstream_bindings(repo, current_idx, harvested, bgp):
 
     if not harvested:
         return []
 
-    prev_patterns = [bgp[i] for i in harvested]
+    current_pat = bgp[current_idx]
 
-    needed = extract_vars_from_pattern(bgp[current_idx])
+    # variables in current pattern
+    current_vars = set(extract_vars_from_pattern(current_pat))
 
+    # collect vars from previous patterns
     upstream_vars = set()
+    prev_patterns = [bgp[i] for i in harvested]
 
     for p in prev_patterns:
         upstream_vars.update(extract_vars_from_pattern(p))
 
-    join_vars = list(set(needed).intersection(upstream_vars))
+    join_vars = current_vars.intersection(upstream_vars)
 
+    print("\n--- Binding Extraction ---")
+    print("Current pattern:", current_pat)
+    print("Join variables:", join_vars)
+    print("Repo size:", len(repo))
     if not join_vars:
         return []
 
-    query = "SELECT " + " ".join("?" + v for v in join_vars) + " WHERE {\n"
+    bindings = []
 
-    def safe(term):
+    for triple in repo:
 
-        if term.startswith("?"):
-            return term
+        s, p, o = triple
 
-        if term.startswith("<"):
-            return term
+        for pat in prev_patterns:
 
-        if term.startswith('"'):
-            return term
-
-        if term.startswith("http"):
-            return f"<{term}>"
-
-        return f'"{term}"'
-
-    for pat in prev_patterns:
-
-        s = safe(pat["subject"])
-        p = safe(pat["predicate"])
-        o = safe(pat["object"])
-
-        query += f" {s} {p} {o} .\n"
-
-    query += "}"
-
-    print("DEBUG binding extraction")
-    print(query)
-
-    try:
-
-        q = prepareQuery(query)
-
-        solutions = []
-
-        for row in repo.query(q):
+            if not triple_matches_pattern(triple, pat):
+                continue
 
             sol = {}
 
-            for v in join_vars:
+            if pat["subject"].startswith("?"):
+                var = pat["subject"][1:]
+                if var in join_vars:
+                    sol[var] = s
 
-                val = row[v]
+            if pat["predicate"].startswith("?"):
+                var = pat["predicate"][1:]
+                if var in join_vars:
+                    sol[var] = p
 
-                if val:
-                    sol[v] = val
+            if pat["object"].startswith("?"):
+                var = pat["object"][1:]
+                if var in join_vars:
+                    sol[var] = o
 
             if sol:
-                solutions.append(sol)
+                bindings.append(sol)
 
-        print("DEBUG:", len(solutions), "bindings")
+    # deduplicate
+    unique = []
+    seen = set()
 
-        return solutions
+    for b in bindings:
+        key = tuple(sorted((k, str(v)) for k, v in b.items()))
+        if key not in seen:
+            seen.add(key)
+            unique.append(b)
 
-    except Exception as e:
+    print("Bindings extracted:", len(unique))
 
-        print("Local binding extraction failed", e)
-        return []
+    if unique:
+        print("Sample bindings:", unique[:5])
 
+    print("--------------------------\n")
+
+    return unique
 
 # -------------------------------------------------------------------------
 # INSERT INTO LOCAL TRIPLESTORE
@@ -598,12 +715,15 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
             print("Bind join:", len(bindings), "bindings")
 
             for i in range(0, len(bindings), BIND_BATCH_SIZE):
+                print(f"Processing binding batch {i} → {i+BIND_BATCH_SIZE}")
 
                 batch = bindings[i:i+BIND_BATCH_SIZE]
 
                 fetch_binding_batch(batch, pat, control_uri, local_repo)
 
         harvested.add(idx)
+        print("Repo size after pattern", idx, ":", len(local_repo))
+        print("------------------------------------")
 
     if len(local_repo) > 0:
 
@@ -619,6 +739,14 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
         print(f"Reactions with xEnzyme triples: {len(reactions_with_enzyme)}")
         print(f"Reactions with equation triples: {len(reactions_with_equation)}")
         print(f"Reactions with BOTH (= your result count): {len(reactions_with_enzyme & reactions_with_equation)}")
+        missing_equation = reactions_with_enzyme - reactions_with_equation
+        missing_enzyme = reactions_with_equation - reactions_with_enzyme
+
+        print("Missing equation triples:", len(missing_equation))
+        print("Missing enzyme triples:", len(missing_enzyme))
+
+        print("Example missing equation:", list(missing_equation)[:5])
+        print("Example missing enzyme:", list(missing_enzyme)[:5])
 
         insert_query(query)
 
