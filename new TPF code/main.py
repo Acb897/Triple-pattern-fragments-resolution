@@ -22,18 +22,18 @@ from TPF import FindBGPPriority, execute_sparql_query, fetch_tpf_page
 # }
 # """
 
-# query = """
-# SELECT ?enzyme ?reaction ?equation WHERE {
-#    ?enzyme <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://bio2rdf.org/ns/kegg#Enzyme> .
-#    ?reaction <http://bio2rdf.org/ns/kegg#xEnzyme> ?enzyme .
-#    ?reaction <http://bio2rdf.org/ns/kegg#equation> ?equation . 
-# }
-# """
 query = """
-SELECT ?enzyme ?reaction ?equation WHERE {
+SELECT ?drugDesc ?cpd ?equation WHERE {
+   ?drug <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/drugCategory> <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugcategory/cathartics> .
+   ?drug <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/keggCompoundId> ?cpd .
+   ?drug <http://www4.wiwiss.fu-berlin.de/drugbank/resource/drugbank/description> ?drugDesc .
+   ?enzyme <http://bio2rdf.org/ns/kegg#xSubstrate> ?cpd .
    ?enzyme <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://bio2rdf.org/ns/kegg#Enzyme> .
+   ?reaction <http://bio2rdf.org/ns/kegg#xEnzyme> ?enzyme .
+   ?reaction <http://bio2rdf.org/ns/kegg#equation> ?equation . 
 }
 """
+
 # ==============================
 # CONFIGURATION
 # ==============================

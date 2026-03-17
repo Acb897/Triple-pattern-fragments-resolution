@@ -16,6 +16,7 @@
 import re
 import json
 import requests
+import threading
 from urllib.parse import urlencode, urljoin
 from concurrent.futures import ThreadPoolExecutor
 
@@ -38,6 +39,8 @@ VOID = Namespace("http://rdfs.org/ns/void#")
 MAX_THREADS = 8
 BIND_BATCH_SIZE = 20
 
+_cache_lock = threading.Lock()
+_repo_lock  = threading.Lock()
 page_cache = {}
 
 # -------------------------------------------------------------------------
@@ -236,102 +239,118 @@ page_cache = {}
 
 def fetch_tpf_page(url):
     """
-    Universal TPF page fetcher:
-    - Tries multiple RDF formats (TriG, Turtle, N-Triples, RDF/XML, RDFa, JSON-LD)
-    - Handles named graphs automatically
-    - Flattens all triples into a single rdflib.Graph
+    Fetch and parse one TPF page.
+    Thread-safe: uses _cache_lock around cache reads/writes.
+    Returns a flattened rdflib.Graph.
     """
-    if url in page_cache:
-        return page_cache[url]
+    with _cache_lock:
+        if url in page_cache:
+            return page_cache[url]
 
     headers = {
-        "Accept": "text/turtle;q=1.0, application/trig;q=0.9, application/rdf+xml;q=0.8, text/n3;q=0.7, application/ld+json;q=0.6",
-        "User-Agent": "TPF-Harvester/1.0 (Python; universal parser)",
+        "Accept": (
+            "text/turtle;q=1.0, application/trig;q=0.9, "
+            "application/rdf+xml;q=0.8, text/n3;q=0.7, "
+            "application/ld+json;q=0.6"
+        ),
+        "User-Agent": "TPF-Harvester/1.0",
     }
 
     cg = ConjunctiveGraph()
-
     try:
         resp = requests.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
         text = resp.text
-        print(f"[FETCH] URL: {url} → Status: {resp.status_code}, length={len(text)}")
-        print("RESPONSE:")
-        print(text)
+        print(f"[FETCH] {url} → {resp.status_code}, {len(text)} bytes")
 
-        # Try parsing using multiple formats
-        formats = ["trig", "turtle", "nt", "xml", "rdfa", "json-ld"]
-        parsed = False
-
-        for fmt in formats:
+        for fmt in ["trig", "turtle", "nt", "xml", "rdfa", "json-ld"]:
             try:
                 cg.parse(data=text, format=fmt)
-                parsed = True
-                # print(f"  → Parsed {len(cg)} triples (including named graphs) using format: {fmt}")
                 break
             except Exception:
                 continue
 
-        if not parsed:
-            print("  → WARNING: Failed to parse RDF from this page")
-            page_cache[url] = Graph()
-            return page_cache[url]
-
-        # Flatten all quads into a single Graph
-        flattened = Graph()
-        for s, p, o, ctx in cg.quads((None, None, None, None)):
-            flattened.add((s, p, o))
-
-        page_cache[url] = flattened
-        # print(f"  → Flattened triples: {len(flattened)}")
-        return flattened
-
     except Exception as e:
-        print(f"  → Fetch/parse error: {e}")
-        page_cache[url] = Graph()
-        return page_cache[url]
+        print(f"  Fetch/parse error: {e}")
 
+    flattened = Graph()
+    for s, p, o, _ctx in cg.quads((None, None, None, None)):
+        flattened.add((s, p, o))
+
+    with _cache_lock:
+        page_cache[url] = flattened
+
+    data_triples = [(s,p,o) for s,p,o in flattened 
+                    if not str(p).startswith("http://www.w3.org/ns/hydra/core#")
+                    and not str(p).startswith("http://rdfs.org/ns/void#")]
+    
+    print(f"  Page subjects: {set(str(s) for s,p,o in data_triples)}")
+    print(f"  Sample triples: {data_triples[:3]}")
+
+    return flattened
+
+def _next_page_from_graph(g, current_url):
+    """
+    Extract the hydra:nextPage / hydra:next URL from the parsed RDF graph.
+    This avoids a second HTTP request and works regardless of content type.
+    """
+    for next_pred in [
+        HYDRA.nextPage,
+        HYDRA.next,
+        URIRef("http://www.w3.org/ns/hydra/core#next"),
+    ]:
+        for s, p, o in g.triples((None, next_pred, None)):
+            return str(o)
+
+    # Fallback: look for the paging metadata on the current page's control URI
+    # Some TPF servers use void:nextPage or a custom predicate
+    for s, p, o in g.triples((None, None, None)):
+        if "page=" in str(o) and str(o) != current_url:
+            # Only treat as next if it looks like an incremented page link
+            pass
+
+    return None
 
 
 def harvest_pattern_into_repo(url, repo):
+    """
+    Paginate through all TPF pages for a given pattern URL.
+    - Uses a SINGLE HTTP request per page (no duplicate fetch).
+    - Extracts the next-page link from the RDF graph (hydra:nextPage).
+    - Thread-safe writes to repo via _repo_lock.
+    """
     print("Harvesting URL:", url)
     current_url = url
     page_count = 0
+
     while current_url:
         page_count += 1
         print(f"  Page {page_count}: {current_url}")
-        try:
-            html = requests.get(current_url).text
-            # print(f"    Content length: {len(html)} bytes")
-            # print(f"    Starts with: {html[:80]!r}")
 
-            soup = BeautifulSoup(html, "html.parser")
-            next_link = soup.select_one('link[rel="next"], a[rel="next"]')
-            next_url = None
-            if next_link and next_link.get("href"):
-                next_url = urljoin(current_url, next_link["href"])
-                # print("    Next page:", next_url)
+        g = fetch_tpf_page(current_url)
 
-            # ─── Critical part ─────────────────────────────────────
-            g = fetch_tpf_page(current_url)
-            # print("    Parsed triples:", len(g))
+        # Extract next-page link from the parsed graph, NOT a second HTTP request
+        next_url = _next_page_from_graph(g, current_url)
 
-            if len(g) == 0:
-                print("    WARNING: empty graph after RDFa parse!")
-
-            added = 0
+        data_triples = 0
+        with _repo_lock:
             for triple in g:
-                print("Adding triples:")
-                print(triple)
+                # Skip hydra/void metadata triples — keep only data triples
+                s, p, o = triple
+                if str(p).startswith("http://www.w3.org/ns/hydra/core#"):
+                    continue
+                if str(p).startswith("http://rdfs.org/ns/void#"):
+                    continue
                 repo.add(triple)
-                added += 1
-            print(f"    Added {added} new triples → total now {len(repo)}")
-            # ───────────────────────────────────────────────────────
+                data_triples += 1
 
-            current_url = next_url
-        except Exception as e:
-            print("    Harvest error:", e)
-            current_url = None
+        print(f"  Added {data_triples} data triples → repo total: {len(repo)}")
+
+        if next_url == current_url:
+            print("  WARNING: next URL equals current URL, stopping.")
+            break
+
+        current_url = next_url
 
 
 # -------------------------------------------------------------------------
@@ -339,50 +358,35 @@ def harvest_pattern_into_repo(url, repo):
 # -------------------------------------------------------------------------
 
 def fetch_binding(binding, pat, control_uri, repo):
-    """
-    Fetch triples for a single binding using proper concretization.
-    Only constructs a TPF URL when at least one position is bound to a concrete value.
-    """
     def concretize(term, binding):
         if not term.startswith("?"):
-            return term  # already concrete (URI, literal, etc.)
-        
+            return term
         var_name = term[1:]
         if var_name not in binding:
-            return term  # unbound variable → keep as-is (will be skipped in URL builder)
-        
+            return term
         val = binding[var_name]
         if isinstance(val, URIRef):
-            return str(val)           # proper URI string for TPF parameter
+            return str(val)
         elif isinstance(val, Literal):
             return val.n3()
-        else:
-            return str(val)           # fallback (bnode, etc.)
+        return str(val)
 
-    s = concretize(pat["subject"], binding)
+    s = concretize(pat["subject"],   binding)
     p = concretize(pat["predicate"], binding)
-    o = concretize(pat["object"], binding)
+    o = concretize(pat["object"],    binding)
 
-    # If any concretization returned None (e.g. literal we don't support), skip
     if None in (s, p, o):
-        return
-
-    # Only fetch if at least one position is concrete (otherwise it's too broad)
-    if all(x.startswith("?") for x in (s, p, o)):
-        # fallback to full pattern harvest
-        url = tpf_uri_request_builder(control_uri, s, p, o)
-        harvest_pattern_into_repo(url, repo)
         return
 
     url = tpf_uri_request_builder(control_uri, s, p, o)
 
-    before = len(repo)
+    with _repo_lock:
+        before = len(repo)
 
-    print(f"Bind-join fetching: {url}")
+    harvest_pattern_into_repo(url, repo)   # internally thread-safe now
 
-    harvest_pattern_into_repo(url, repo)
-
-    after = len(repo)
+    with _repo_lock:
+        after = len(repo)
 
     if after == before:
         print("⚠️  Bind produced NO triples:", url)
