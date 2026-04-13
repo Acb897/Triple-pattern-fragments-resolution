@@ -29,6 +29,7 @@ from rdflib.plugins.sparql.parserutils import Expr
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.algebra import translateQuery
 import time
+import queue
 
 HYDRA = Namespace("http://www.w3.org/ns/hydra/core#")
 VOID = Namespace("http://rdfs.org/ns/void#")
@@ -37,12 +38,17 @@ VOID = Namespace("http://rdfs.org/ns/void#")
 # GLOBAL SETTINGS
 # -------------------------------------------------------------------------
 
-MAX_THREADS = 1
-BIND_BATCH_SIZE = 10
-
+MAX_THREADS = 3
+BIND_BATCH_SIZE = MAX_THREADS * 5
+MAX_BUFFER_BYTES   = 10_000_000  # ~10MB safety cap
+FLUSH_INTERVAL     = 5           # seconds
 _cache_lock = threading.Lock()
 _repo_lock  = threading.Lock()
 page_cache = {}
+
+
+BUFFER_QUEUE_MAXSIZE = 100_000  # prevents memory explosion
+_ingest_queue = queue.Queue(maxsize=BUFFER_QUEUE_MAXSIZE)
 
 INDEXING_MODE = False
 ALLOW_PARTIAL = True
@@ -163,7 +169,7 @@ def tpf_uri_request_builder(control_uri, subject, predicate, object_):
     if params:
         query = urlencode(params)
         url = f"{control_uri}?{query}"
-        print("TPF URL:", url)
+        # print("TPF URL:", url)
         return url
     else:
         return control_uri
@@ -339,13 +345,10 @@ def harvest_pattern_into_repo(url, named_graph):
             if str(p).startswith("http://www.w3.org/ns/hydra/core#") or \
                str(p).startswith("http://rdfs.org/ns/void#"):
                 continue
-            buffer.append(triple)
+            add_to_buffer(triple, named_graph)
             data_triples += 1
-            if len(buffer) >= BUFFER_SIZE:
-                insert_triples_stream(buffer, named_graph)
-                buffer.clear()
 
-        print(f" Buffered {data_triples} data triples (itemsPerPage={items_per_page})")
+        # print(f" Buffered {data_triples} data triples (itemsPerPage={items_per_page})")
 
         if data_triples == 0:
             print("  → No data triples on this page → end of results (server may still emit hydra:next)")
@@ -361,10 +364,7 @@ def harvest_pattern_into_repo(url, named_graph):
 
         current_url = next_url
 
-    # flush remaining
-    if buffer:
-        insert_triples_stream(buffer, named_graph)
-        buffer.clear()
+
 
 
 # -------------------------------------------------------------------------
@@ -760,6 +760,81 @@ def insert_triples_stream(statements, named_graph=None):
 
 
 # -------------------------------------------------------------------------
+# BUFFERED INGESTION
+# -------------------------------------------------------------------------
+def add_to_buffer(triple, named_graph=None):
+    """
+    Push triple into ingestion queue (blocking if full).
+    This provides backpressure and guarantees no data loss.
+    """
+
+    s, p, o = triple
+
+    if named_graph:
+        line = f"{s.n3()} {p.n3()} {o.n3()} <{named_graph}> .\n"
+    else:
+        line = f"{s.n3()} {p.n3()} {o.n3()} .\n"
+
+    _ingest_queue.put(line)  # blocks if queue full → SAFE
+
+
+
+
+def buffer_flusher_daemon():
+    endpoint = "http://acb8computer:7200/repositories/test1/statements"
+    BATCH_SIZE = 500
+    MAX_RETRIES = 3
+
+    while True:
+        batch = []
+        try:
+            # Block until at least one item is available
+            line = _ingest_queue.get(timeout=1)
+            batch.append(line)
+
+            # Drain up to BATCH_SIZE without blocking
+            while len(batch) < BATCH_SIZE:
+                try:
+                    batch.append(_ingest_queue.get_nowait())
+                except queue.Empty:
+                    break
+
+            # Attempt POST with retries
+            payload = "".join(batch)
+            success = False
+
+            for attempt in range(MAX_RETRIES):
+                try:
+                    r = requests.post(
+                        endpoint,
+                        data=payload,
+                        headers={"Content-Type": "application/n-quads"},
+                        timeout=30
+                    )
+                    if r.status_code in (200, 204):
+                        success = True
+                        break
+                    else:
+                        print(f"[FLUSH ERROR] attempt {attempt+1}: {r.status_code} {r.text[:200]}")
+                except requests.RequestException as e:
+                    print(f"[FLUSH ERROR] attempt {attempt+1}: {e}")
+                time.sleep(0.5 * (attempt + 1))  # backoff
+
+            if not success:
+                # Log the lost triples so you can diagnose
+                print(f"[DATA LOSS] Failed to insert {len(batch)} triples after {MAX_RETRIES} retries")
+
+            # Always mark done — keeps join() unblocked
+            # Log failures above rather than silently swallowing
+            for _ in batch:
+                _ingest_queue.task_done()
+
+            time.sleep(0.05)
+
+        except queue.Empty:
+            # Queue idle — nothing to flush right now
+            pass
+# -------------------------------------------------------------------------
 # HARVEST EXECUTION
 # -------------------------------------------------------------------------
 
@@ -844,7 +919,8 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
                 batch = bindings[i:i+BIND_BATCH_SIZE]
 
                 fetch_binding_batch(batch, pat, control_uri, named_graph)
-
+        _ingest_queue.join()
+        print(f"[SYNC] Queue drained after pattern {idx}")
         harvested.add(idx)
         print("------------------------------------")
         
@@ -857,7 +933,7 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
 # -------------------------------------------------------------------------
 
 def FindBGPPriority(query, endpoints, base_named_graph=None):
-
+    threading.Thread(target=buffer_flusher_daemon, daemon=True).start()
     if isinstance(endpoints,str):
         endpoints = [endpoints]
 
@@ -881,7 +957,9 @@ def FindBGPPriority(query, endpoints, base_named_graph=None):
             graph_iri = f"{base_named_graph}/endpoint{i+1}"
 
         harvest_endpoint_optimized(endpoint, bgp, graph_iri)
-
+    print("Waiting for ingestion queue to empty...")
+    _ingest_queue.join()
+    print("All data flushed.")
     print("All endpoints processed.")
 
 # -------------------------------------------------------------------------
@@ -928,12 +1006,3 @@ def execute_sparql_query(query):
         return None
 
 
-
-
-perro_url = "http://localhost:3000/kegg-sparql?subject=http%3A%2F%2Fbio2rdf.org%2Frn%3AR01053&predicate=http%3A%2F%2Fbio2rdf.org%2Fns%2Fkegg%23equation&page=1"
-g = fetch_tpf_page(perro_url)
-next_url = _next_page_from_graph(g, perro_url)
-for triple in g:
-    s, p, o = triple
-    print(triple)
-print("Next URL:", next_url)
