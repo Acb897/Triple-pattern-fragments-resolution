@@ -246,20 +246,68 @@ import requests
 
 page_cache = {}
 
+FOAF_PRIMARY_TOPIC = URIRef("http://xmlns.com/foaf/0.1/primaryTopic")
+METADATA_NAMESPACES = (
+    "http://www.w3.org/ns/hydra/core#",
+    "http://rdfs.org/ns/void#",
+)
+
+def _is_metadata_predicate(p):
+    return any(str(p).startswith(ns) for ns in METADATA_NAMESPACES)
+
+def _extract_data_and_meta(cg):
+    """
+    Primary strategy: exclude the graph that contains foaf:primaryTopic.
+    Returns (data_graph, meta_graph, strategy_used).
+    Falls back to predicate filtering if primaryTopic not found or yields no data.
+    """
+    # --- Strategy 1: graph-based exclusion via foaf:primaryTopic ---
+    metadata_graph_iris = set()
+    for s, p, o, ctx in cg.quads((None, FOAF_PRIMARY_TOPIC, None, None)):
+        metadata_graph_iris.add(ctx.identifier)
+
+    if metadata_graph_iris:
+        data_graph = Graph()
+        meta_graph = Graph()
+
+        for s, p, o, ctx in cg.quads((None, None, None, None)):
+            if ctx.identifier in metadata_graph_iris:
+                meta_graph.add((s, p, o))
+            else:
+                data_graph.add((s, p, o))
+
+        if len(data_graph) > 0:
+            print(f"  [Strategy] Graph exclusion via foaf:primaryTopic "
+                  f"({len(metadata_graph_iris)} metadata graph(s))")
+            return data_graph, meta_graph, "graph"
+        else:
+            print("  [Strategy] foaf:primaryTopic found but yielded 0 data triples, "
+                  "falling back to predicate filtering")
+
+    else:
+        print("  [Strategy] foaf:primaryTopic not found, "
+              "falling back to predicate filtering")
+
+    # --- Strategy 2: predicate namespace filtering (original behaviour) ---
+    data_graph = Graph()
+    meta_graph = Graph()
+
+    for s, p, o, ctx in cg.quads((None, None, None, None)):
+        if _is_metadata_predicate(p):
+            meta_graph.add((s, p, o))
+        else:
+            data_graph.add((s, p, o))
+
+    print(f"  [Strategy] Predicate filtering → {len(data_graph)} data triples")
+    return data_graph, meta_graph, "predicate"
+
+
 def fetch_tpf_page(url):
-    """
-    Fetch and parse one TPF page.
-    Thread-safe: uses _cache_lock around cache reads/writes.
-    Returns a flattened rdflib.Graph.
-    """
     with _cache_lock:
         if url in page_cache:
             return page_cache[url]
 
-    headers = {
-        "Accept": (
-            "text/turtle")
-    }
+    headers = {"Accept": "application/trig, text/turtle;q=0.9"}
 
     cg = ConjunctiveGraph()
     try:
@@ -278,42 +326,20 @@ def fetch_tpf_page(url):
     except Exception as e:
         print(f"  Fetch/parse error: {e}")
 
-    flattened = Graph()
-    for s, p, o, _ctx in cg.quads((None, None, None, None)):
-        flattened.add((s, p, o))
+    data_graph, meta_graph, _ = _extract_data_and_meta(cg)
+
+    result = (data_graph, meta_graph)
 
     with _cache_lock:
-        page_cache[url] = flattened
+        page_cache[url] = result
 
-    data_triples = [(s,p,o) for s,p,o in flattened 
-                    if not str(p).startswith("http://www.w3.org/ns/hydra/core#")
-                    and not str(p).startswith("http://rdfs.org/ns/void#")]
-    
-    # print(f"  Page subjects: {set(str(s) for s,p,o in data_triples)}")
-    # print(f"  Sample triples: {data_triples[:3]}")
+    return result
 
-    return flattened
-
-def _next_page_from_graph(g, current_url):
-    """
-    Extract the hydra:nextPage / hydra:next URL from the parsed RDF graph.
-    This avoids a second HTTP request and works regardless of content type.
-    """
-    for next_pred in [
-        HYDRA.nextPage,
-        HYDRA.next,
-        URIRef("http://www.w3.org/ns/hydra/core#next"),
-    ]:
-        for s, p, o in g.triples((None, next_pred, None)):
+def _next_page_from_graph(meta_graph, current_url):
+    for next_pred in [HYDRA.nextPage, HYDRA.next,
+                      URIRef("http://www.w3.org/ns/hydra/core#next")]:
+        for s, p, o in meta_graph.triples((None, next_pred, None)):
             return str(o)
-
-    # Fallback: look for the paging metadata on the current page's control URI
-    # Some TPF servers use void:nextPage or a custom predicate
-    for s, p, o in g.triples((None, None, None)):
-        if "page=" in str(o) and str(o) != current_url:
-            # Only treat as next if it looks like an incremented page link
-            pass
-
     return None
 
 
@@ -321,45 +347,38 @@ def harvest_pattern_into_repo(url, named_graph):
     print("Harvesting URL:", url)
     current_url = url
     page_count = 0
-    buffer = []
-    BUFFER_SIZE = 20
 
     while current_url:
         page_count += 1
         print(f" Page {page_count}: {current_url}")
 
-        g = fetch_tpf_page(current_url)
-        next_url = _next_page_from_graph(g, current_url)
+        data_graph, meta_graph = fetch_tpf_page(current_url)
+        next_url = _next_page_from_graph(meta_graph, current_url)
 
-        # Extract itemsPerPage from page metadata
         items_per_page = None
-        for s, p, o in g.triples((None, HYDRA.itemsPerPage, None)):
+        for s, p, o in meta_graph.triples((None, HYDRA.itemsPerPage, None)):
             try:
                 items_per_page = int(str(o))
             except ValueError:
                 pass
 
         data_triples = 0
-        for triple in g:
-            s, p, o = triple
-            if str(p).startswith("http://www.w3.org/ns/hydra/core#") or \
-               str(p).startswith("http://rdfs.org/ns/void#"):
-                continue
-            add_to_buffer(triple, named_graph)
+        for s, p, o in data_graph:
+            add_to_buffer((s, p, o), named_graph)
             data_triples += 1
 
-        # print(f" Buffered {data_triples} data triples (itemsPerPage={items_per_page})")
+        print(f"  Buffered {data_triples} data triples")
 
         if data_triples == 0:
-            print("  → No data triples on this page → end of results (server may still emit hydra:next)")
+            print("  → No data triples → end of results")
             break
 
         if items_per_page is not None and data_triples < items_per_page:
-            print(f"  → Partial page ({data_triples} < {items_per_page}) → last page, stopping.")
+            print(f"  → Partial page ({data_triples} < {items_per_page}) → last page")
             break
 
         if next_url == current_url:
-            print(" WARNING: next URL equals current URL, stopping.")
+            print("  WARNING: next URL equals current URL, stopping.")
             break
 
         current_url = next_url
