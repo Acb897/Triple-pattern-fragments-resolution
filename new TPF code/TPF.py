@@ -19,7 +19,6 @@ import requests
 import threading
 from urllib.parse import urlencode, urljoin
 from concurrent.futures import ThreadPoolExecutor
-
 from bs4 import BeautifulSoup
 
 from rdflib import ConjunctiveGraph, Graph, URIRef, Literal, Variable
@@ -56,28 +55,52 @@ ALLOW_PARTIAL = True
 # SPARQL ALGEBRA PARSING
 # -------------------------------------------------------------------------
 
-def extract_all_patterns(node, patterns=None):
+def extract_all_patterns(node, patterns=None, graph_term=None):
+    """
+    Recursively walk the SPARQL algebra tree.
+    - graph_term is propagated into BGP triples when inside a GRAPH block.
+    - Handles both TPF (no graph) and QPF (GRAPH ?g / GRAPH <uri>) queries.
+    """
     if patterns is None:
         patterns = []
 
     if node is None:
         return patterns
 
-    # If node has .triples attribute (BGP)
-    if hasattr(node, "triples") and node.triples:
-        patterns.extend(node.triples)
+    node_name = getattr(node, "name", None)
 
-    # Recurse over common attributes
-    for attr in ["p", "p1", "p2", "args", "graph"]:
+    # BGP node: contains the actual triples
+    if node_name == "BGP":
+        if node.triples:
+            for s, p, o in node.triples:
+                patterns.append({
+                    "subject":   s,
+                    "predicate": p,
+                    "object":    o,
+                    "graph":     graph_term,  # None unless inside GRAPH block
+                })
+        return patterns
+
+    # GRAPH node: sets the graph context for everything inside it
+    if node_name == "Graph":
+        inner_graph_term = getattr(node, "term", None)
+        # node.p holds the inner algebra (usually a BGP)
+        if hasattr(node, "p"):
+            extract_all_patterns(node.p, patterns, graph_term=inner_graph_term)
+        return patterns
+
+    # All other nodes: recurse over known child attributes
+    for attr in ["p", "p1", "p2", "args", "expr"]:
         if hasattr(node, attr):
             child = getattr(node, attr)
             if isinstance(child, list):
                 for c in child:
-                    extract_all_patterns(c, patterns)
-            else:
-                extract_all_patterns(child, patterns)
+                    extract_all_patterns(c, patterns, graph_term)
+            elif child is not None:
+                extract_all_patterns(child, patterns, graph_term)
 
     return patterns
+
 
 def transform(query):
     try:
@@ -86,29 +109,35 @@ def transform(query):
         if not hasattr(algebra, "algebra") or algebra.algebra is None:
             print("WARNING: translateQuery returned empty algebra")
             return []
-        triples = extract_all_patterns(algebra.algebra)
+        raw_patterns = extract_all_patterns(algebra.algebra)
     except Exception as e:
         print("SPARQL parse error:", e)
         return []
 
     def term_to_str(term):
+        if term is None:
+            return None
         if isinstance(term, Variable):
-            return f"?{term}"   # <-- preserve the ? prefix
+            return f"?{term}"
         return str(term)
 
-    # Deduplicate
     seen = set()
     bgp = []
-    for s, p, o in triples:
-        key = (term_to_str(s), term_to_str(p), term_to_str(o))
+
+    for pat in raw_patterns:
+        entry = {
+            "subject":   term_to_str(pat["subject"]),
+            "predicate": term_to_str(pat["predicate"]),
+            "object":    term_to_str(pat["object"]),
+            "graph":     term_to_str(pat["graph"]),  # None for TPF patterns
+        }
+        key = (entry["subject"], entry["predicate"],
+               entry["object"], entry["graph"])
         if key not in seen:
             seen.add(key)
-            bgp.append({
-                "subject":   term_to_str(s),
-                "predicate": term_to_str(p),
-                "object":    term_to_str(o),
-            })
-    print("DEBUG: extracted triple patterns:", bgp)
+            bgp.append(entry)
+
+    print("DEBUG: extracted quad patterns:", bgp)
     return bgp
 
 # -------------------------------------------------------------------------
@@ -116,20 +145,14 @@ def transform(query):
 # -------------------------------------------------------------------------
 
 def extract_vars_from_pattern(pat):
+    vars_ = []
 
-    vars = []
+    for field in ("subject", "predicate", "object", "graph"):
+        val = pat.get(field)
+        if val and val.startswith("?"):
+            vars_.append(val[1:])
 
-    if pat["subject"].startswith("?"):
-        vars.append(pat["subject"][1:])
-
-    if pat["predicate"].startswith("?"):
-        vars.append(pat["predicate"][1:])
-
-    if pat["object"].startswith("?"):
-        vars.append(pat["object"][1:])
-
-    return vars
-
+    return vars_
 
 def shares_variable(pat, processed_patterns):
 
@@ -146,14 +169,13 @@ def shares_variable(pat, processed_patterns):
 # TPF URL BUILDER
 # -------------------------------------------------------------------------
 
-from urllib.parse import urlencode
 
-def tpf_uri_request_builder(control_uri, subject, predicate, object_):
+
+def tpf_uri_request_builder(control_uri, subject, predicate, object_, graph=None):
     """
-    Build a TPF request URL.
-    - Encodes URIs properly
-    - Skips variables (starting with ?)
-    - Returns full URL ready for fetch_tpf_page
+    Build a TPF or QPF request URL.
+    Skips variables (starting with ?) and None values.
+    Includes graph parameter for QPF when provided.
     """
     params = {}
 
@@ -166,13 +188,12 @@ def tpf_uri_request_builder(control_uri, subject, predicate, object_):
     if object_ is not None and not object_.startswith("?"):
         params["object"] = object_
 
+    if graph is not None and not graph.startswith("?"):
+        params["graph"] = graph
+
     if params:
-        query = urlencode(params)
-        url = f"{control_uri}?{query}"
-        # print("TPF URL:", url)
-        return url
-    else:
-        return control_uri
+        return f"{control_uri}?{urlencode(params)}"
+    return control_uri
 
 
 # -------------------------------------------------------------------------
@@ -195,14 +216,14 @@ def heuristic_cardinality(html):
     return 5000
 
 
-def get_pattern_count(control_uri, subject, predicate, object):
+def get_pattern_count(control_uri, subject, predicate, object_, graph=None):
 
-    url = tpf_uri_request_builder(control_uri, subject, predicate, object)
+    url = tpf_uri_request_builder(control_uri, subject, predicate, object_, graph)
 
     try:
         response = requests.get(url)
         html = response.text
-        content_type = response.headers.get("content-type","")
+        content_type = response.headers.get("content-type", "")
     except Exception as e:
         print("Connection failed:", url, e)
         return 999_999_999
@@ -210,32 +231,25 @@ def get_pattern_count(control_uri, subject, predicate, object):
     if "html" not in content_type and "<html" not in html:
         return heuristic_cardinality(html)
 
-    graph = Graph()
+    g = Graph()
     count = None
 
     try:
-        graph.parse(data=html, format="rdfa")
+        g.parse(data=html, format="rdfa")
     except:
         return heuristic_cardinality(html)
 
     for pred in [HYDRA.totalItems, VOID.triples]:
-
-        for s,p,o in graph:
-
+        for s, p, o in g:
             if p == pred:
-
-                raw = str(o).strip()
-                raw = re.sub(r'[,±~]', '', raw)
-
+                raw = re.sub(r'[,±~]', '', str(o).strip())
                 if raw.isdigit():
                     count = int(raw)
                     break
-
         if count:
             break
 
     return count if count else heuristic_cardinality(html)
-
 
 # -------------------------------------------------------------------------
 # PAGE FETCHING (WITH CACHE)
@@ -393,7 +407,7 @@ def harvest_pattern_into_repo(url, named_graph):
 def fetch_binding(binding, pat, control_uri, named_graph):
 
     def concretize(term, binding):
-        if not term.startswith("?"):
+        if term is None or not term.startswith("?"):
             return term
         var_name = term[1:]
         if var_name not in binding:
@@ -408,12 +422,9 @@ def fetch_binding(binding, pat, control_uri, named_graph):
     s = concretize(pat["subject"],   binding)
     p = concretize(pat["predicate"], binding)
     o = concretize(pat["object"],    binding)
+    g = concretize(pat.get("graph"), binding)  # None if TPF
 
-    if None in (s, p, o):
-        return
-
-    url = tpf_uri_request_builder(control_uri, s, p, o)
-
+    url = tpf_uri_request_builder(control_uri, s, p, o, g)
     harvest_pattern_into_repo(url, named_graph)
 
 
@@ -864,85 +875,69 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
     harvested = set()
     counts = {}
 
-    for i,pat in enumerate(bgp):
+    for i, pat in enumerate(bgp):
         counts[i] = get_pattern_count(
             control_uri,
             pat["subject"],
             pat["predicate"],
-            pat["object"]
+            pat["object"],
+            pat.get("graph"),       # None for TPF, graph IRI/var for QPF
         )
 
     remaining = list(range(len(bgp)))
-
     first = min(remaining, key=lambda i: counts[i])
     remaining.remove(first)
-
     execution_order = [first]
 
     while remaining:
-
         connected = [
             idx for idx in remaining
             if shares_variable(bgp[idx], [bgp[i] for i in execution_order])
         ]
-
-        if connected:
-            next_idx = min(connected, key=lambda i: counts[i])
-        else:
-            next_idx = min(remaining, key=lambda i: counts[i])
-
+        next_idx = min(connected if connected else remaining,
+                       key=lambda i: counts[i])
         execution_order.append(next_idx)
         remaining.remove(next_idx)
 
     print("Execution order:", execution_order)
 
     for idx in execution_order:
-
         pat = bgp[idx]
-
         print("Processing pattern", idx, pat)
-
-        required_vars = extract_vars_from_pattern(pat)
 
         bindings = extract_upstream_bindings_graphdb(
             idx, harvested, bgp, named_graph
         )
 
         if INDEXING_MODE:
+            required_vars = extract_vars_from_pattern(pat)
             if not bindings and required_vars and len(harvested) > 0:
                 print("Skipping pattern (strict mode, no bindings)")
                 harvested.add(idx)
                 continue
 
-        if not bindings or not required_vars:
-
+        if not bindings or not extract_vars_from_pattern(pat):
             print("Full pattern download")
-
             url = tpf_uri_request_builder(
                 control_uri,
                 pat["subject"],
                 pat["predicate"],
-                pat["object"]
+                pat["object"],
+                pat.get("graph"),
             )
-
             harvest_pattern_into_repo(url, named_graph)
 
         else:
-
             print("Bind join:", len(bindings), "bindings")
-
             for i in range(0, len(bindings), BIND_BATCH_SIZE):
-
-                print(f"Processing binding batch {i} → {i+BIND_BATCH_SIZE}")
-
-                batch = bindings[i:i+BIND_BATCH_SIZE]
-
+                print(f"Processing binding batch {i} → {i + BIND_BATCH_SIZE}")
+                batch = bindings[i:i + BIND_BATCH_SIZE]
                 fetch_binding_batch(batch, pat, control_uri, named_graph)
+
         _ingest_queue.join()
         print(f"[SYNC] Queue drained after pattern {idx}")
         harvested.add(idx)
         print("------------------------------------")
-        
 
     return None
 
