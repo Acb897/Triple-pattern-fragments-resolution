@@ -27,6 +27,11 @@ from rdflib.plugins.sparql import prepareQuery
 from rdflib.plugins.sparql.parserutils import Expr
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.algebra import translateQuery
+from rdflib import paths as rdflib_paths
+from rdflib.paths import (
+    MulPath, SequencePath, AlternativePath,
+    InvPath, NegatedPath, Path
+)
 import time
 import queue
 
@@ -57,41 +62,52 @@ ALLOW_PARTIAL = True
 # -------------------------------------------------------------------------
 
 def extract_all_patterns(node, patterns=None, graph_term=None):
-    """
-    Recursively walk the SPARQL algebra tree.
-    - graph_term is propagated into BGP triples when inside a GRAPH block.
-    - Handles both TPF (no graph) and QPF (GRAPH ?g / GRAPH <uri>) queries.
-    """
     if patterns is None:
         patterns = []
-
     if node is None:
         return patterns
 
     node_name = getattr(node, "name", None)
 
-    # BGP node: contains the actual triples
     if node_name == "BGP":
-        if node.triples:
-            for s, p, o in node.triples:
+        for s, p, o in node.triples:
+            if isinstance(p, (MulPath, SequencePath, AlternativePath,
+                               InvPath, NegatedPath)):
+                patterns.append({
+                    "subject":        s,
+                    "predicate":      "__PATH__",
+                    "predicate_path": p,          # ← this line was missing
+                    "object":         o,
+                    "graph":          graph_term,
+                })
+            else:
                 patterns.append({
                     "subject":   s,
                     "predicate": p,
                     "object":    o,
-                    "graph":     graph_term,  # None unless inside GRAPH block
+                    "graph":     graph_term,
                 })
         return patterns
 
-    # GRAPH node: sets the graph context for everything inside it
+    # Safety net for RDFLib versions that do produce a Path algebra node
+    if node_name == "Path":
+        patterns.append({
+            "subject":        node.s,
+            "predicate":      "__PATH__",
+            "predicate_path": node.p,
+            "object":         node.o,
+            "graph":          graph_term,
+        })
+        return patterns
+
     if node_name == "Graph":
         inner_graph_term = getattr(node, "term", None)
-        # node.p holds the inner algebra (usually a BGP)
         if hasattr(node, "p"):
             extract_all_patterns(node.p, patterns, graph_term=inner_graph_term)
         return patterns
 
-    # All other nodes: recurse over known child attributes
-    for attr in ["p", "p1", "p2", "args", "expr", "BGP", "Join", "LeftJoin", "Union", "Project", "Filter"]:
+    for attr in ["p", "p1", "p2", "args", "expr",
+                 "BGP", "Join", "LeftJoin", "Union", "Project", "Filter"]:
         if hasattr(node, attr):
             child = getattr(node, attr)
             if isinstance(child, list):
@@ -104,31 +120,43 @@ def extract_all_patterns(node, patterns=None, graph_term=None):
 
 
 def transform(query: str):
-    with _parse_lock:   # <--- THIS IS THE KEY
+    with _parse_lock:
         try:
             parsed = parseQuery(query)
             algebra = translateQuery(parsed).algebra
             raw_patterns = extract_all_patterns(algebra)
         except Exception as e:
             print(f"SPARQL parse error: {e}")
+            raw_patterns = []
 
-    # The rest of the function (term_to_str, deduplication, etc.) stays outside the lock
     def term_to_str(term):
         if term is None:
             return None
         if isinstance(term, Variable):
             return f"?{term}"
+        if not isinstance(term, (URIRef, Literal, str)):
+            return "__PATH__"
         return str(term)
 
     seen = set()
     bgp = []
+
     for pat in raw_patterns:
         entry = {
-            "subject": term_to_str(pat.get("subject")),
+            "subject":   term_to_str(pat.get("subject")),
             "predicate": term_to_str(pat.get("predicate")),
-            "object": term_to_str(pat.get("object")),
-            "graph": term_to_str(pat.get("graph"))
+            "object":    term_to_str(pat.get("object")),
+            "graph":     term_to_str(pat.get("graph")),
         }
+
+        # Fix: check the RAW pattern dict for "predicate_path",
+        # not the already-stringified entry dict.
+        # pat["predicate"] here is still the raw RDFLib path object,
+        # so we check pat.get("predicate_path") which was set by
+        # extract_all_patterns when it saw a Path algebra node.
+        if "predicate_path" in pat:
+            entry["predicate_path"] = pat["predicate_path"]
+
         key = (entry["subject"], entry["predicate"], entry["object"], entry["graph"])
         if key not in seen:
             seen.add(key)
@@ -137,18 +165,68 @@ def transform(query: str):
     print("DEBUG: extracted quad patterns:", bgp)
     return bgp
 
+def path_to_str(path) -> str:
+    """Recursively serialize an RDFLib path expression to a string token."""
+    if isinstance(path, URIRef):
+        return str(path)
+    if isinstance(path, MulPath):
+        base = path_to_str(path.path)
+        return f"({base}){path.mod}"          # mod is '*', '+', or '?'
+    if isinstance(path, SequencePath):
+        return "/".join(path_to_str(a) for a in path.args)
+    if isinstance(path, AlternativePath):
+        return "|".join(path_to_str(a) for a in path.args)
+    if isinstance(path, InvPath):
+        return f"^{path_to_str(path.arg)}"
+    return repr(path)                          # fallback
+
+
+
+def is_path_pattern(pat: dict) -> bool:
+    """
+    Returns True when a pattern's predicate is a property path expression
+    rather than a plain IRI or variable string.
+
+    Patterns produced by extract_all_patterns store a raw RDFLib path
+    object in 'predicate_path' and a '__PATH__' sentinel in 'predicate'
+    so the rest of the pipeline can detect them cheaply with a string check.
+    """
+    return pat.get("predicate") == "__PATH__"
+
+
+
+def extract_base_iris_from_path(path) -> list:
+    """
+    Walk a path expression tree and collect every concrete IRI it references.
+    Used to know which simple triple patterns to pre-harvest so the local
+    graph is populated before path evaluation.
+
+    Example: (rdfs:subClassOf)* → [rdfs:subClassOf]
+             rdf:type / rdfs:subClassOf* → [rdf:type, rdfs:subClassOf]
+    """
+    if isinstance(path, URIRef):
+        return [path]
+    if isinstance(path, (MulPath, InvPath)):
+        inner = path.path if isinstance(path, MulPath) else path.arg
+        return extract_base_iris_from_path(inner)
+    if isinstance(path, (SequencePath, AlternativePath)):
+        iris = []
+        for arg in path.args:
+            iris.extend(extract_base_iris_from_path(arg))
+        return iris
+    return []
 # -------------------------------------------------------------------------
 # PATTERN HELPERS
 # -------------------------------------------------------------------------
 
 def extract_vars_from_pattern(pat):
     vars_ = []
-
     for field in ("subject", "predicate", "object", "graph"):
         val = pat.get(field)
-        if val and val.startswith("?"):
+        # ── NEW: skip the path sentinel — it is not a variable ────────────
+        if val and val != "__PATH__" and val.startswith("?"):
             vars_.append(val[1:])
-
+        # ─────────────────────────────────────────────────────────────────
     return vars_
 
 def shares_variable(pat, processed_patterns):
@@ -162,6 +240,106 @@ def shares_variable(pat, processed_patterns):
     return False
 
 
+
+
+
+def evaluate_path_locally(pat: dict, named_graph: str) -> list[dict]:
+    """
+    Resolve a property-path pattern against triples already stored in
+    GraphDB, returning a list of variable-binding dicts.
+
+    Strategy
+    --------
+    1. Pull relevant triples from GraphDB (filtered by base IRIs in the path).
+    2. Load into a temporary in-memory RDFLib graph.
+    3. Use the correct RDFLib path traversal call depending on which
+       of subject / object are bound vs variable.
+    4. Project join variables back as binding dicts.
+    """
+    path_obj  = pat["predicate_path"]
+    subj_term = pat["subject"]
+    obj_term  = pat["object"]
+
+    subj_is_var = subj_term.startswith("?")
+    obj_is_var  = obj_term.startswith("?")
+
+    # ── 1. Pull local triples from GraphDB ───────────────────────────────
+    base_iris = extract_base_iris_from_path(path_obj)
+    if not base_iris:
+        return []
+
+    values_clause = ", ".join(f"<{iri}>" for iri in base_iris)
+    graph_filter  = (
+        f'FILTER(STRSTARTS(STR(?g), "{named_graph}"))' if named_graph else ""
+    )
+
+    pull_query = f"""
+    SELECT ?s ?p ?o WHERE {{
+      GRAPH ?g {{ ?s ?p ?o . }}
+      FILTER(?p IN ({values_clause}))
+      {graph_filter}
+    }}
+    """
+    rows = execute_sparql_query(pull_query) or []
+
+    # ── 2. Build an in-memory RDFLib graph ───────────────────────────────
+    local_g = Graph()
+    for row in rows:
+        try:
+            o_raw = row["o"]
+            o_node = (
+                URIRef(o_raw)
+                if o_raw.startswith("http") or o_raw.startswith("_:")
+                else Literal(o_raw)
+            )
+            local_g.add((URIRef(row["s"]), URIRef(row["p"]), o_node))
+        except Exception:
+            continue
+
+    print(f"  [Path eval] local graph has {len(local_g)} triples "
+          f"for path {path_to_str(path_obj)}")
+
+    # ── 3. Evaluate the path using the correct RDFLib call ───────────────
+    # Design Problem 2 fix: use subjects() / objects() when one end is
+    # already bound, rather than always iterating all subject_objects pairs.
+    if not subj_is_var and obj_is_var:
+        # e.g.  <A> subClassOf* ?y
+        anchor = URIRef(subj_term)
+        pairs  = [(anchor, o) for o in local_g.objects(anchor, path_obj)]
+
+    elif subj_is_var and not obj_is_var:
+        # e.g.  ?x subClassOf* <owl:Thing>
+        # Object might be an IRI or a literal — handle both
+        raw = obj_term
+        anchor = URIRef(raw) if raw.startswith("http") else Literal(raw)
+        pairs  = [(s, anchor) for s in local_g.subjects(path_obj, anchor)]
+
+    else:
+        # Both variables: ?x subClassOf* ?y — iterate all reachable pairs
+        pairs = list(local_g.subject_objects(path_obj))
+
+    # ── 4. Project into binding dicts ────────────────────────────────────
+    bindings = []
+    for s_res, o_res in pairs:
+        sol = {}
+        if subj_is_var:
+            sol[subj_term[1:]] = s_res
+        if obj_is_var:
+            sol[obj_term[1:]] = o_res
+        if sol:
+            bindings.append(sol)
+
+    # Deduplicate
+    seen: set = set()
+    unique = []
+    for b in bindings:
+        key = tuple(sorted((k, str(v)) for k, v in b.items()))
+        if key not in seen:
+            seen.add(key)
+            unique.append(b)
+
+    print(f"  [Path eval] produced {len(unique)} bindings")
+    return unique
 # -------------------------------------------------------------------------
 # TPF URL BUILDER
 # -------------------------------------------------------------------------
@@ -501,84 +679,6 @@ def fetch_binding_batch(batch, pat, control_uri, named_graph):
 # BINDING EXTRACTION
 # -------------------------------------------------------------------------
 
-# def extract_upstream_bindings(repo, current_idx, harvested, bgp):
-
-#     if not harvested:
-#         return []
-
-#     prev_patterns = [bgp[i] for i in harvested]
-
-#     needed = extract_vars_from_pattern(bgp[current_idx])
-
-#     upstream_vars = set()
-
-#     for p in prev_patterns:
-#         upstream_vars.update(extract_vars_from_pattern(p))
-
-#     join_vars = list(set(needed).intersection(upstream_vars))
-
-#     if not join_vars:
-#         return []
-
-#     query = "SELECT " + " ".join("?" + v for v in join_vars) + " WHERE {\n"
-
-#     def safe(term):
-
-#         if term.startswith("?"):
-#             return term
-
-#         if term.startswith("<"):
-#             return term
-
-#         if term.startswith('"'):
-#             return term
-
-#         if term.startswith("http"):
-#             return f"<{term}>"
-
-#         return f'"{term}"'
-
-#     for pat in prev_patterns:
-
-#         s = safe(pat["subject"])
-#         p = safe(pat["predicate"])
-#         o = safe(pat["object"])
-
-#         query += f" {s} {p} {o} .\n"
-
-#     query += "}"
-
-#     print("DEBUG binding extraction")
-#     print(query)
-
-#     try:
-
-#         q = prepareQuery(query)
-
-#         solutions = []
-
-#         for row in repo.query(q):
-
-#             sol = {}
-
-#             for v in join_vars:
-
-#                 val = row[v]
-
-#                 if val:
-#                     sol[v] = val
-
-#             if sol:
-#                 solutions.append(sol)
-
-#         print("DEBUG:", len(solutions), "bindings")
-
-#         return solutions
-
-#     except Exception as e:
-
-#         print("Local binding extraction failed", e)
-#         return []
 
 def term_matches(pattern_term, triple_term):
     """
@@ -691,7 +791,6 @@ def extract_upstream_bindings_graphdb(current_idx, harvested, bgp, graph_iri):
         return []
 
     current_pat = bgp[current_idx]
-
     current_vars = set(extract_vars_from_pattern(current_pat))
 
     upstream_vars = set()
@@ -708,9 +807,7 @@ def extract_upstream_bindings_graphdb(current_idx, harvested, bgp, graph_iri):
     def safe(term):
         if term.startswith("?"):
             return term
-        if term.startswith("<"):
-            return term
-        if term.startswith('"'):
+        if term.startswith("<") or term.startswith('"'):
             return term
         if term.startswith("http"):
             return f"<{term}>"
@@ -722,10 +819,19 @@ def extract_upstream_bindings_graphdb(current_idx, harvested, bgp, graph_iri):
         query += f" GRAPH <{graph_iri}> {{\n"
 
     for pat in prev_patterns:
-        s = safe(pat["subject"])
-        p = safe(pat["predicate"])
-        o = safe(pat["object"])
-        query += f" {s} {p} {o} .\n"
+        # Bug 2 fix: path patterns were stored with predicate="__PATH__",
+        # which is not valid SPARQL. Use the synthetic IRI that was
+        # materialised into GraphDB by harvest_endpoint_optimized instead.
+        if is_path_pattern(pat):
+            synthetic_p = "urn:tpf:path:" + path_to_str(pat["predicate_path"])
+            s = safe(pat["subject"])
+            o = safe(pat["object"])
+            query += f" {s} <{synthetic_p}> {o} .\n"
+        else:
+            s = safe(pat["subject"])
+            p = safe(pat["predicate"])
+            o = safe(pat["object"])
+            query += f" {s} {p} {o} .\n"
 
     if graph_iri:
         query += " }\n"
@@ -929,35 +1035,77 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
     harvested = set()
     counts = {}
 
+    # Bug 1 fix: never call get_pattern_count on a path pattern
     for i, pat in enumerate(bgp):
-        counts[i] = get_pattern_count(
-            control_uri,
-            pat["subject"],
-            pat["predicate"],
-            pat["object"],
-            pat.get("graph"),       # None for TPF, graph IRI/var for QPF
-        )
+        if is_path_pattern(pat):
+            counts[i] = 1  # neutral cost; paths are scheduled last anyway
+        else:
+            counts[i] = get_pattern_count(
+                control_uri,
+                pat["subject"],
+                pat["predicate"],
+                pat["object"],
+                pat.get("graph"),
+            )
 
-    remaining = list(range(len(bgp)))
-    first = min(remaining, key=lambda i: counts[i])
-    remaining.remove(first)
-    execution_order = [first]
+    # Design Problem 1 fix: separate simple patterns from path patterns.
+    # Path patterns MUST be scheduled after all simple patterns whose
+    # variables they share, because evaluate_path_locally pulls from
+    # GraphDB — if nothing has been harvested yet it will see an empty graph.
+    simple_indices = [i for i, p in enumerate(bgp) if not is_path_pattern(p)]
+    path_indices   = [i for i, p in enumerate(bgp) if is_path_pattern(p)]
 
-    while remaining:
-        connected = [
-            idx for idx in remaining
-            if shares_variable(bgp[idx], [bgp[i] for i in execution_order])
-        ]
-        next_idx = min(connected if connected else remaining,
-                       key=lambda i: counts[i])
-        execution_order.append(next_idx)
-        remaining.remove(next_idx)
+    # Order simple patterns by cardinality with connectivity preference
+    if simple_indices:
+        remaining = simple_indices[:]
+        first = min(remaining, key=lambda i: counts[i])
+        remaining.remove(first)
+        execution_order = [first]
+
+        while remaining:
+            connected = [
+                idx for idx in remaining
+                if shares_variable(bgp[idx], [bgp[i] for i in execution_order])
+            ]
+            next_idx = min(connected if connected else remaining,
+                           key=lambda i: counts[i])
+            execution_order.append(next_idx)
+            remaining.remove(next_idx)
+    else:
+        execution_order = []
+
+    # Path patterns always go last
+    execution_order.extend(path_indices)
 
     print("Execution order:", execution_order)
 
     for idx in execution_order:
         pat = bgp[idx]
         print("Processing pattern", idx, pat)
+
+        if is_path_pattern(pat):
+            print(f"  [Path] Evaluating '{path_to_str(pat['predicate_path'])}' locally")
+            _ingest_queue.join()
+            path_bindings = evaluate_path_locally(pat, named_graph)
+            print(f"  [Path] {len(path_bindings)} bindings — "
+                  "storing synthetic triples for join propagation")
+
+            s_field = pat["subject"]
+            o_field = pat["object"]
+            for b in path_bindings:
+                s_val = URIRef(str(b[s_field[1:]])) if s_field.startswith("?") \
+                        else URIRef(s_field)
+                o_val = URIRef(str(b[o_field[1:]])) if o_field.startswith("?") \
+                        else URIRef(o_field)
+                synthetic_p = URIRef(
+                    "urn:tpf:path:" + path_to_str(pat["predicate_path"])
+                )
+                add_to_buffer((s_val, synthetic_p, o_val), named_graph)
+
+            harvested.add(idx)
+            _ingest_queue.join()
+            print("------------------------------------")
+            continue
 
         bindings = extract_upstream_bindings_graphdb(
             idx, harvested, bgp, named_graph
@@ -980,11 +1128,11 @@ def harvest_endpoint_optimized(control_uri, bgp, named_graph):
                 pat.get("graph"),
             )
             harvest_pattern_into_repo(
-            url,
-            named_graph,
-            pat["subject"],
-            pat["predicate"],
-            pat["object"])
+                url,
+                named_graph,
+                pat["subject"],
+                pat["predicate"],
+                pat["object"])
 
         else:
             print("Bind join:", len(bindings), "bindings")
